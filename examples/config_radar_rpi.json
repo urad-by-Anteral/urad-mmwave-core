@@ -1,0 +1,21 @@
+{
+    "control_serial": {
+        "port": "/dev/serial0",
+        "baudrate": 115200,
+        "timeout": 0.3
+    },
+    "data_serial": {
+        "port": "/dev/serial0",
+        "baudrate": 921600,
+        "timeout": 0.3
+    },
+    "chirp_config_path": "./config/chirp_config.cfg",
+    "gpio_reset_pin": 5,
+    "output": {
+        "save_pointcloud": true,
+        "pointcloud_path": "./output/PointCloud.txt"
+    },
+    "display": {
+        "print_pointcloud": false
+    }
+}

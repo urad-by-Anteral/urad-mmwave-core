@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "urad-mmwave"
+dynamic = ["version"]
+description = "Core Python SDK for uRAD mmWave radar sensors (TI AWR/IWR based) by Anteral"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Anteral S.L." }]
+requires-python = ">=3.9"
+keywords = ["radar", "mmwave", "urad", "anteral", "AWR1843", "IWR6843", "TLV"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: System :: Hardware",
+]
+dependencies = [
+    "numpy>=1.21,<3.0",
+    "pyserial>=3.5,<4.0",
+]
+
+[project.optional-dependencies]
+rpi = ["gpiozero>=1.6"]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.4",
+    "black>=24.0",
+]
+
+[project.scripts]
+urad-mmwave = "urad_mmwave.cli:main"
+
+[project.urls]
+Homepage = "https://urad.es"
+
+[tool.hatch.version]
+path = "src/urad_mmwave/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/urad_mmwave"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
+target-version = ["py39"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
