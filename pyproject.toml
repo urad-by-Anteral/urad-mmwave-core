@@ -42,6 +42,8 @@ dev = [
 
 [project.scripts]
 urad-mmwave = "urad_mmwave.cli:main"
+urad-level-sensing = "urad_mmwave.apps.level_sensing:main"
+urad-people-counting = "urad_mmwave.apps.people_counting:main"
 
 [project.urls]
 Homepage = "https://urad.es"

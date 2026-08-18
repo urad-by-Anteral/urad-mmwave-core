@@ -24,7 +24,7 @@ from time import sleep
 import serial
 
 from urad_mmwave.config import AppConfig, SerialConfig
-from urad_mmwave.parser import Frame, read_frames
+from urad_mmwave.parser import Frame, iter_packets, read_frames
 
 log = logging.getLogger(__name__)
 
@@ -157,10 +157,25 @@ class RadarSession:
                     )
 
     def frames(self) -> Iterator[Frame]:
-        """Yield decoded frames from the data port until interrupted."""
+        """Yield decoded out-of-box frames from the data port."""
         if self._data_port is None:
             raise RuntimeError("Session not started; use 'with RadarSession(...)'")
         return read_frames(self._data_port, self._config.packet)
+
+    def packets(self) -> Iterator[tuple[tuple, bytes, float]]:
+        """Yield raw ``(header_fields, payload, timestamp)`` packets.
+
+        For application firmwares (e.g. 3D people counting) that share the
+        packet framing but use their own TLV set — decode the payload with
+        the application's parser.
+        """
+        if self._data_port is None:
+            raise RuntimeError("Session not started; use 'with RadarSession(...)'")
+        return iter_packets(
+            self._data_port,
+            self._config.packet.sync_pattern,
+            self._config.packet.header_format,
+        )
 
     def stop(self) -> None:
         """Stop the sensor and release the serial ports (idempotent)."""

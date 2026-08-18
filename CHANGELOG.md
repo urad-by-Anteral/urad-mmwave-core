@@ -29,6 +29,16 @@ the uRAD Automotive, Automotive HPA and Industrial SDKs.
   (standard + temperature) for each product.
 - Relative `chirp_config_path` values are resolved against the JSON config
   file's directory, so profiles work from any working directory.
+- Application clients: `urad-level-sensing` (high accuracy level sensing for
+  AWR/IWR with generated chirp configuration, fixed-point range decoding and
+  averaged measurements) and `urad-people-counting` (3D people counting,
+  standard and overhead, decoding target list/index/height, compressed point
+  cloud and presence TLVs).
+- Generic `iter_packets()` primitive and `RadarSession.packets()` for
+  application firmwares that share the packet framing but define their own
+  TLV sets; bounded idle timeout via `max_empty_reads`.
+- People counting doppler values are now decoded as signed (the legacy
+  scripts decoded them as unsigned, wrapping negative velocities).
 
 ### Fixed (relative to the legacy per-product scripts)
 - Unknown TLV types no longer desynchronize the parser.

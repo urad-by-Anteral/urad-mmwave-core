@@ -194,46 +194,83 @@ def parse_tlvs(
     return points, temperature
 
 
-def read_frames(port: SerialLike, config: PacketConfig) -> Iterator[Frame]:
-    """Continuously read, synchronize and decode frames from ``port``.
+def iter_packets(
+    port: SerialLike,
+    sync_pattern: int,
+    header_format: str,
+    total_len_index: int = 1,
+    max_empty_reads: int | None = None,
+) -> Iterator[tuple[tuple, bytes, float]]:
+    """Continuously read and synchronize raw packets from ``port``.
 
-    Yields one :class:`Frame` per valid packet. Garbage between packets is
+    Generic building block shared by the out-of-box demo and application
+    firmwares with different header layouts. The first field of
+    ``header_format`` must be the sync word; ``total_len_index`` is the
+    position of the total packet length among the remaining fields.
+
+    Yields ``(header_fields, payload, timestamp)`` per valid packet, where
+    ``header_fields`` excludes the sync word. Garbage between packets is
     discarded byte by byte until the sync pattern is found again; packets
     that time out mid-read are dropped with a warning.
+
+    With ``max_empty_reads`` set, raises :class:`StreamTimeoutError` after
+    that many consecutive empty reads while waiting for a header (each read
+    lasts up to the port timeout); by default it waits indefinitely.
     """
-    header_struct = struct.Struct(config.header_format)
+    header_struct = struct.Struct(header_format)
     header_len = header_struct.size
     buf = bytearray()
+    empty_reads = 0
 
     while True:
         chunk = port.read(header_len - len(buf))
-        buf += chunk
+        if chunk:
+            empty_reads = 0
+            buf += chunk
+        else:
+            empty_reads += 1
+            if max_empty_reads is not None and empty_reads >= max_empty_reads:
+                raise StreamTimeoutError(
+                    f"No data received after {max_empty_reads} reads"
+                )
         if len(buf) < header_len:
             continue
 
         fields = header_struct.unpack(bytes(buf[:header_len]))
-        if fields[0] != config.sync_pattern:
+        if fields[0] != sync_pattern:
             del buf[0]  # shift one byte and retry: re-synchronization
             continue
 
-        header = FrameHeader(*fields[1:])
         timestamp = time()
         buf.clear()
 
-        payload_len = header.total_packet_len - header_len
-        if payload_len < 0 or header.total_packet_len > _MAX_PACKET_LEN:
+        total_packet_len = fields[1:][total_len_index]
+        payload_len = total_packet_len - header_len
+        if payload_len < 0 or total_packet_len > _MAX_PACKET_LEN:
             log.warning(
-                "Implausible packet length %d; re-synchronizing",
-                header.total_packet_len,
+                "Implausible packet length %d; re-synchronizing", total_packet_len
             )
             continue
 
         try:
             payload = read_exact(port, payload_len)
         except StreamTimeoutError as exc:
-            log.warning("Dropped frame %d: %s", header.frame_number, exc)
+            log.warning("Dropped packet: %s", exc)
             continue
 
+        yield fields[1:], payload, timestamp
+
+
+def read_frames(port: SerialLike, config: PacketConfig) -> Iterator[Frame]:
+    """Continuously read, synchronize and decode out-of-box frames.
+
+    Yields one :class:`Frame` per valid packet, built on
+    :func:`iter_packets`.
+    """
+    for fields, payload, timestamp in iter_packets(
+        port, config.sync_pattern, config.header_format
+    ):
+        header = FrameHeader(*fields)
         points, temperature = parse_tlvs(payload, header, config)
         yield Frame(
             header=header,

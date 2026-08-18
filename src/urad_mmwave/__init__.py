@@ -30,6 +30,7 @@ from urad_mmwave.parser import (
     FrameHeader,
     StreamTimeoutError,
     TemperatureReport,
+    iter_packets,
     read_frames,
 )
 from urad_mmwave.radar import RadarSession, read_chirp_config
@@ -51,6 +52,7 @@ __all__ = [
     "StreamTimeoutError",
     "TemperatureReport",
     "TemperatureWriter",
+    "iter_packets",
     "load_config",
     "read_chirp_config",
     "read_frames",

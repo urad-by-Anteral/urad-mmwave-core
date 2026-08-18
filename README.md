@@ -18,6 +18,10 @@ firmware (mmWave SDK 3.x):
   2D point cloud viewer (`--gui`).
 - Ready-made [product profiles](profiles) (serial settings, plot ranges and
   chirp configurations) for every supported product.
+- Application clients built on the same core: `urad-level-sensing`
+  (high accuracy level sensing, AWR and IWR) and `urad-people-counting`
+  (3D people counting, standard and overhead). Each requires its dedicated
+  firmware, distributed in the product repositories.
 
 Supported products: **uRAD Automotive** (AWR1843AoP, 77 GHz), **uRAD
 Automotive HPA** (AWR1843 ISK, 77 GHz) and **uRAD Industrial** (IWR6843AoP,
