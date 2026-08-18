@@ -56,6 +56,14 @@ class DisplayConfig:
 
 
 @dataclass
+class GuiConfig:
+    """Live viewer options (requires the ``gui`` extra)."""
+
+    x_range: list = field(default_factory=lambda: [-10.0, 10.0])
+    y_range: list = field(default_factory=lambda: [0.0, 20.0])
+
+
+@dataclass
 class AppConfig:
     """Root configuration model for a uRAD mmWave radar session."""
 
@@ -66,6 +74,7 @@ class AppConfig:
     packet: PacketConfig = field(default_factory=PacketConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     display: DisplayConfig = field(default_factory=DisplayConfig)
+    gui: GuiConfig = field(default_factory=GuiConfig)
 
     @property
     def is_single_port(self) -> bool:
@@ -85,9 +94,11 @@ def _build_section(cls: type, data: dict[str, Any], section: str) -> Any:
 def load_config(path: str | Path) -> AppConfig:
     """Load and validate a JSON configuration file into an :class:`AppConfig`.
 
-    The ``packet``, ``output`` and ``display`` sections are optional and fall
-    back to mmWave SDK 3.x defaults. ``sync_pattern`` may be given as a hex
-    string (``"0x708050603040102"``) or as an integer.
+    The ``packet``, ``output``, ``display`` and ``gui`` sections are optional
+    and fall back to mmWave SDK 3.x defaults. ``sync_pattern`` may be given as
+    a hex string (``"0x708050603040102"``) or as an integer. A relative
+    ``chirp_config_path`` is resolved against the configuration file's
+    directory, so profiles work regardless of the current working directory.
 
     Raises:
         FileNotFoundError: If the configuration file does not exist.
@@ -109,7 +120,7 @@ def load_config(path: str | Path) -> AppConfig:
     if isinstance(sync, str):
         packet_data["sync_pattern"] = int(sync, 16)
 
-    return AppConfig(
+    config = AppConfig(
         control_serial=_build_section(
             SerialConfig, data["control_serial"], "control_serial"
         ),
@@ -119,4 +130,11 @@ def load_config(path: str | Path) -> AppConfig:
         packet=_build_section(PacketConfig, packet_data, "packet"),
         output=_build_section(OutputConfig, data.get("output", {}), "output"),
         display=_build_section(DisplayConfig, data.get("display", {}), "display"),
+        gui=_build_section(GuiConfig, data.get("gui", {}), "gui"),
     )
+
+    chirp_path = Path(config.chirp_config_path)
+    if not chirp_path.is_absolute():
+        config.chirp_config_path = str((config_path.parent / chirp_path).resolve())
+
+    return config

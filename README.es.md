@@ -18,12 +18,15 @@ out-of-box demo (mmWave SDK 3.x):
   `sensorStop` al salir).
 - Salida de nube de puntos y temperatura en el formato de texto clásico de
   uRAD.
-- Herramienta de línea de comandos lista para usar: `urad-mmwave`.
+- Herramienta de línea de comandos lista para usar: `urad-mmwave`, con visor
+  2D de nube de puntos en tiempo real opcional (`--gui`).
+- [Perfiles de producto](profiles) listos para usar (puertos serie, rangos
+  de plot y configuraciones de chirp) para cada producto soportado.
 
-Productos soportados: **uRAD Automotive** (AWR1843AoP), **uRAD Automotive
-HPA** (AWR1843 ISK) y **uRAD Industrial** (IWR6843AoP). Los ficheros de
-configuración de chirp y los binarios de firmware específicos de cada
-producto están en el repositorio de cada producto.
+Productos soportados: **uRAD Automotive** (AWR1843AoP, 77 GHz), **uRAD
+Automotive HPA** (AWR1843 ISK, 77 GHz) y **uRAD Industrial** (IWR6843AoP,
+60 GHz). Los binarios de firmware se distribuyen como assets de release en
+el repositorio de cada producto.
 
 ## Instalación
 
@@ -39,24 +42,30 @@ Para configuraciones single-UART en Raspberry Pi (soporte de reset por GPIO):
 pip install "urad-mmwave[rpi] @ git+https://github.com/<org>/urad-mmwave-core.git"
 ```
 
+Para el visor de nube de puntos en tiempo real (`--gui`):
+
+```bash
+pip install "urad-mmwave[gui] @ git+https://github.com/<org>/urad-mmwave-core.git"
+```
+
 ## Inicio rápido (línea de comandos)
 
 1. Conecta tu radar uRAD por USB e identifica sus dos puertos serie
    (control ≈ 115200 baudios, datos ≈ 921600 baudios). En Windows, revisa el
    Administrador de dispositivos (`COMx`); en Linux suelen aparecer como
    `/dev/ttyACM0` y `/dev/ttyACM1`.
-2. Copia [`examples/config_radar.json`](examples/config_radar.json) junto a tu
-   fichero de configuración de chirp y ajusta los puertos.
-3. Ejecuta:
+2. Ejecuta con el [perfil](profiles) de tu producto:
 
 ```bash
-urad-mmwave --config config_radar.json
+urad-mmwave --config profiles/industrial/config_radar.json --data-port COM7 --control-port COM8
 ```
 
 Detén con `Ctrl+C`: el sensor se para y los puertos se liberan
-automáticamente. Opciones útiles: `--data-port`/`--control-port` (cambiar
-puertos sin editar el JSON), `--single-port /dev/serial0` (Raspberry Pi),
-`--duration 10`, `--max-frames 100`, `--no-save`, `-v`.
+automáticamente. Opciones útiles: `--gui` (visor de nube de puntos en tiempo
+real), `--single-port /dev/serial0` (Raspberry Pi), `--duration 10`,
+`--max-frames 100`, `--no-save`, `-v`. Las rutas relativas dentro del JSON se
+resuelven respecto al directorio del perfil, así que funciona desde cualquier
+sitio.
 
 ## Inicio rápido (librería)
 
@@ -88,6 +97,11 @@ with RadarSession(config) as session, PointCloudWriter("PointCloud.txt") as out:
 | | `save_temperature` | `false` | Añade los informes TLV-9 a `temperature_path` |
 | `display` | `print_pointcloud` | `true` | Imprime cada punto detectado por stdout |
 | | `print_temperature` | `false` | Imprime los informes de temperatura |
+| `gui` | `x_range` | `[-10, 10]` | Rango del eje X en metros para el visor `--gui` |
+| | `y_range` | `[0, 20]` | Rango del eje Y en metros para el visor `--gui` |
+
+Las rutas relativas (`chirp_config_path`) se resuelven respecto al directorio
+del fichero JSON; las rutas de salida son relativas al directorio de trabajo.
 
 ### Formato de salida
 

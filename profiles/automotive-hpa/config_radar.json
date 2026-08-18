@@ -1,0 +1,24 @@
+{
+    "control_serial": {
+        "port": "COM8",
+        "baudrate": 115200,
+        "timeout": 0.3
+    },
+    "data_serial": {
+        "port": "COM7",
+        "baudrate": 921600,
+        "timeout": 0.3
+    },
+    "chirp_config_path": "./chirp_config.cfg",
+    "output": {
+        "save_pointcloud": true,
+        "pointcloud_path": "./output/PointCloud.txt"
+    },
+    "display": {
+        "print_pointcloud": true
+    },
+    "gui": {
+        "x_range": [-2, 2],
+        "y_range": [0, 5]
+    }
+}

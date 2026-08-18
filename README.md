@@ -14,11 +14,15 @@ firmware (mmWave SDK 3.x):
 - Robust TLV stream parsing: sync-word recovery, unknown-TLV skipping,
   bounded timeouts and clean shutdown (`sensorStop` is always sent on exit).
 - Point cloud and temperature output in the classic uRAD text format.
-- A ready-to-use command line tool: `urad-mmwave`.
+- A ready-to-use command line tool: `urad-mmwave`, with an optional live
+  2D point cloud viewer (`--gui`).
+- Ready-made [product profiles](profiles) (serial settings, plot ranges and
+  chirp configurations) for every supported product.
 
-Supported products: **uRAD Automotive** (AWR1843AoP), **uRAD Automotive HPA**
-(AWR1843 ISK) and **uRAD Industrial** (IWR6843AoP). The product-specific chirp
-configuration files and firmware binaries live in each product's repository.
+Supported products: **uRAD Automotive** (AWR1843AoP, 77 GHz), **uRAD
+Automotive HPA** (AWR1843 ISK, 77 GHz) and **uRAD Industrial** (IWR6843AoP,
+60 GHz). Firmware binaries are distributed as release assets in each
+product's repository.
 
 ## Installation
 
@@ -34,24 +38,29 @@ For Raspberry Pi single-UART setups (GPIO reset support):
 pip install "urad-mmwave[rpi] @ git+https://github.com/<org>/urad-mmwave-core.git"
 ```
 
+For the live point cloud viewer (`--gui`):
+
+```bash
+pip install "urad-mmwave[gui] @ git+https://github.com/<org>/urad-mmwave-core.git"
+```
+
 ## Quick start (command line)
 
 1. Connect your uRAD radar over USB and identify its two serial ports
    (control ≈ 115200 baud, data ≈ 921600 baud). On Windows check the Device
    Manager (`COMx`); on Linux they typically appear as `/dev/ttyACM0` and
    `/dev/ttyACM1`.
-2. Copy [`examples/config_radar.json`](examples/config_radar.json) next to
-   your chirp configuration file and adjust the ports.
-3. Run:
+2. Run with your product's [profile](profiles):
 
 ```bash
-urad-mmwave --config config_radar.json
+urad-mmwave --config profiles/industrial/config_radar.json --data-port COM7 --control-port COM8
 ```
 
 Stop with `Ctrl+C` — the sensor is stopped and the ports are released
-automatically. Useful flags: `--data-port`/`--control-port` (override ports
-without editing the JSON), `--single-port /dev/serial0` (Raspberry Pi),
-`--duration 10`, `--max-frames 100`, `--no-save`, `-v`.
+automatically. Useful flags: `--gui` (live point cloud viewer),
+`--single-port /dev/serial0` (Raspberry Pi), `--duration 10`,
+`--max-frames 100`, `--no-save`, `-v`. Relative paths inside the JSON are
+resolved against the profile directory, so this works from anywhere.
 
 ## Quick start (library)
 
@@ -83,6 +92,11 @@ with RadarSession(config) as session, PointCloudWriter("PointCloud.txt") as out:
 | | `save_temperature` | `false` | Append TLV-9 reports to `temperature_path` |
 | `display` | `print_pointcloud` | `true` | Print each detected point to stdout |
 | | `print_temperature` | `false` | Print temperature reports |
+| `gui` | `x_range` | `[-10, 10]` | X axis range in meters for the `--gui` viewer |
+| | `y_range` | `[0, 20]` | Y axis range in meters for the `--gui` viewer |
+
+Relative paths (`chirp_config_path`) are resolved against the directory of
+the JSON file; output paths are relative to the current working directory.
 
 ### Output format
 

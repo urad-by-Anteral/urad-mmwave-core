@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -72,6 +73,33 @@ def test_single_port_detection(tmp_path):
     config = load_config(write_config(tmp_path, data))
     assert config.is_single_port is True
     assert config.gpio_reset_pin == 5
+
+
+def test_chirp_path_resolved_relative_to_config_file(tmp_path):
+    minimal = {
+        "control_serial": {"port": "COM8", "baudrate": 115200},
+        "data_serial": {"port": "COM7", "baudrate": 921600},
+        "chirp_config_path": "./chirp/my_config.cfg",
+    }
+    config = load_config(write_config(tmp_path, minimal))
+    assert (
+        Path(config.chirp_config_path)
+        == (tmp_path / "chirp" / "my_config.cfg").resolve()
+    )
+
+
+def test_gui_section_defaults_and_overrides(tmp_path):
+    minimal = {
+        "control_serial": {"port": "COM8", "baudrate": 115200},
+        "data_serial": {"port": "COM7", "baudrate": 921600},
+    }
+    config = load_config(write_config(tmp_path, minimal))
+    assert config.gui.x_range == [-10.0, 10.0]
+
+    minimal["gui"] = {"x_range": [-25, 25], "y_range": [0, 50]}
+    config = load_config(write_config(tmp_path, minimal))
+    assert config.gui.x_range == [-25, 25]
+    assert config.gui.y_range == [0, 50]
 
 
 def test_missing_file_raises():

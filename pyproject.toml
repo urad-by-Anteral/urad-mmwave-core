@@ -32,6 +32,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+gui = ["pyqtgraph>=0.13", "PySide6>=6.5"]
 rpi = ["gpiozero>=1.6"]
 dev = [
     "pytest>=7.0",

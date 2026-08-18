@@ -62,6 +62,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--no-save", action="store_true", help="Disable all file output"
     )
     parser.add_argument(
+        "--gui",
+        action="store_true",
+        help="Show the live 2D point cloud viewer "
+        "(requires: pip install urad-mmwave[gui])",
+    )
+    parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable debug logging"
     )
     parser.add_argument(
@@ -134,7 +140,8 @@ def main(argv: list[str] | None = None) -> int:
                     TemperatureWriter(config.output.temperature_path)
                 )
 
-            for frame in session.frames():
+            def handle_frame(frame: Frame) -> None:
+                nonlocal frame_count
                 frame_count += 1
                 _print_frame(
                     frame,
@@ -146,12 +153,27 @@ def main(argv: list[str] | None = None) -> int:
                 if temperature_writer is not None:
                     temperature_writer.write(frame.temperature, frame.timestamp)
 
-                if args.max_frames is not None and frame_count >= args.max_frames:
-                    log.info("Reached %d frames; stopping", args.max_frames)
-                    break
-                if args.duration is not None and time() - start_time >= args.duration:
-                    log.info("Reached %.1f s; stopping", args.duration)
-                    break
+            if args.gui:
+                if args.max_frames is not None or args.duration is not None:
+                    log.warning(
+                        "--max-frames/--duration are ignored in GUI mode; "
+                        "close the window to stop"
+                    )
+                from urad_mmwave.viewer import run_viewer
+
+                run_viewer(config, session.frames(), on_frame=handle_frame)
+            else:
+                for frame in session.frames():
+                    handle_frame(frame)
+                    if args.max_frames is not None and frame_count >= args.max_frames:
+                        log.info("Reached %d frames; stopping", args.max_frames)
+                        break
+                    if (
+                        args.duration is not None
+                        and time() - start_time >= args.duration
+                    ):
+                        log.info("Reached %.1f s; stopping", args.duration)
+                        break
     except KeyboardInterrupt:
         log.info("Interrupted by user; stopping sensor")
     except Exception as exc:  # noqa: BLE001 - report cleanly instead of a traceback

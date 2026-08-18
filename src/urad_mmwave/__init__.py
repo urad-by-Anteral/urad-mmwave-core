@@ -19,6 +19,7 @@ from __future__ import annotations
 from urad_mmwave.config import (
     AppConfig,
     DisplayConfig,
+    GuiConfig,
     OutputConfig,
     PacketConfig,
     SerialConfig,
@@ -41,6 +42,7 @@ __all__ = [
     "DisplayConfig",
     "Frame",
     "FrameHeader",
+    "GuiConfig",
     "OutputConfig",
     "PacketConfig",
     "PointCloudWriter",

@@ -21,6 +21,14 @@ the uRAD Automotive, Automotive HPA and Industrial SDKs.
   (`pip install urad-mmwave[rpi]`).
 - Hardware-independent test suite with synthetic TLV packets; CI on
   Linux/Windows for Python 3.9 and 3.13.
+- Live 2D point cloud viewer (`--gui`, `pip install urad-mmwave[gui]`) with
+  SNR-scaled markers and per-product plot ranges, replacing the legacy
+  `out_of_box_demo_USB_GUI.py` scripts.
+- Product profiles under `profiles/` (automotive, automotive-hpa,
+  industrial): serial settings, GUI ranges and the chirp configurations
+  (standard + temperature) for each product.
+- Relative `chirp_config_path` values are resolved against the JSON config
+  file's directory, so profiles work from any working directory.
 
 ### Fixed (relative to the legacy per-product scripts)
 - Unknown TLV types no longer desynchronize the parser.
