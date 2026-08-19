@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Level sensing range 3 no longer reads 62.5 mm short when the low word of
+  its fixed-point value is >= 0x8000: the legacy decode treated that word
+  as signed (a leftover of the out-of-box point struct, where the slot is
+  a signed doppler index). Ranges 1 and 2 were always decoded correctly.
+
 ## [0.2.0] - 2026-08-19
 
 All changes in this release were validated against a uRAD Industrial

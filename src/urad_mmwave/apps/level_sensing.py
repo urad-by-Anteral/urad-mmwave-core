@@ -41,7 +41,11 @@ TLV_RANGES = 1
 
 _TLV_HEADER = struct.Struct(TLV_HEADER_FORMAT)
 _DESCRIPTOR_STRUCT = struct.Struct("<2H")  # numDetectedObj, xyzQFormat
-_RANGES_STRUCT = struct.Struct("<HhH3h")  # r1_low, r3_low, r2_low, r1, r2, r3
+# r1_low, r3_low, r2_low, r1, r2, r3. The low halves are unsigned: the
+# legacy scripts decoded r3_low as signed (a leftover of the out-of-box
+# point struct, where that slot is a signed doppler index), which made
+# range 3 read 62.5 mm short whenever its low word was >= 0x8000.
+_RANGES_STRUCT = struct.Struct("<3H3h")
 
 _CHIRP_SLOPE_MAX = 31.23
 _CHIRP_SLOPE_MIN = 1.87
