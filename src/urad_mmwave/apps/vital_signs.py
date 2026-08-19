@@ -204,6 +204,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--no-save", action="store_true", help="Disable all file output"
     )
     parser.add_argument(
+        "--gui",
+        action="store_true",
+        help="Show the live heart and breathing waveforms "
+        "(requires: pip install urad-mmwave[gui])",
+    )
+    parser.add_argument(
         "--duration",
         type=float,
         metavar="SECONDS",
@@ -257,8 +263,7 @@ def main(argv: list[str] | None = None) -> int:
                     )
                 log.info("Writing output files to %s", output_dir)
 
-            for _fields, payload, timestamp in session.packets():
-                frame = parse_frame(payload, timestamp)
+            def handle_frame(frame: VitalSignsFrame) -> None:
                 status = patient_status(frame)
 
                 # The firmware keeps measuring at the last locked range bin
@@ -291,10 +296,11 @@ def main(argv: list[str] | None = None) -> int:
                                 frame.vitals.heart_rate,
                                 frame.vitals.breathing_rate,
                             ],
-                            timestamp,
+                            frame.timestamp,
                         )
                     writers["PointCloud"].write_row(
-                        [v for p in frame.tracking.points for v in p], timestamp
+                        [v for p in frame.tracking.points for v in p],
+                        frame.timestamp,
                     )
                     writers["Targets"].write_row(
                         [
@@ -302,12 +308,33 @@ def main(argv: list[str] | None = None) -> int:
                             for t in frame.tracking.targets
                             for v in (t.tid, *t.position, *t.velocity)
                         ],
-                        timestamp,
+                        frame.timestamp,
                     )
 
-                if args.duration is not None and time() - start_time >= args.duration:
-                    log.info("Reached %.1f s; stopping", args.duration)
-                    break
+            if args.gui:
+                if args.duration is not None:
+                    log.warning(
+                        "--duration is ignored in GUI mode; close the window to stop"
+                    )
+                from urad_mmwave.apps.vital_signs_viewer import run_viewer
+
+                run_viewer(
+                    (
+                        parse_frame(payload, timestamp)
+                        for _fields, payload, timestamp in session.packets()
+                    ),
+                    on_frame=handle_frame,
+                )
+            else:
+                for _fields, payload, timestamp in session.packets():
+                    frame = parse_frame(payload, timestamp)
+                    handle_frame(frame)
+                    if (
+                        args.duration is not None
+                        and time() - start_time >= args.duration
+                    ):
+                        log.info("Reached %.1f s; stopping", args.duration)
+                        break
     except KeyboardInterrupt:
         log.info("Interrupted by user; stopping sensor")
     except Exception as exc:  # noqa: BLE001 - report cleanly instead of a traceback

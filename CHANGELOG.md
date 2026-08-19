@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Live waveform view for vital signs: `urad-vital-signs --gui` plots the
+  heart and breathing waveforms streamed by the firmware as two scrolling
+  charts, with the patient status, median-smoothed heart rate and
+  breathing rate in the window title.
 - Live range profile for level sensing: `urad-level-sensing --spectrum`
   enables the raw ADC stream (TLV type 2, second `guiMonitor` flag) and
   shows the full FFT range profile with the three detected peaks marked
