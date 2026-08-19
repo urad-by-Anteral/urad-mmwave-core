@@ -1,9 +1,11 @@
-"""3D People Counting application (uRAD Industrial).
+"""3D People Tracking application (uRAD Industrial).
 
-Requires the TI 3D People Counting firmware (standard or overhead variant,
-distributed as release assets in the uRAD Industrial repository). Both
-variants share this code — the difference is the firmware binary and the
-chirp configuration file used.
+Requires the TI 3D People Tracking firmware (standard or overhead variant,
+distributed as release assets in the uRAD Industrial repository). TI renamed
+this application from "People Counting" to "People Tracking" in the Radar
+Toolbox; the UART output format is unchanged. Both variants share this
+code — the difference is the firmware binary and the chirp configuration
+file used.
 
 The firmware shares the out-of-box packet framing (same sync word and
 header) but uses its own TLV set:
@@ -17,7 +19,7 @@ header) but uses its own TLV set:
 Typical usage:
 
     from urad_mmwave import RadarSession, load_config
-    from urad_mmwave.apps.people_counting import parse_frame
+    from urad_mmwave.apps.people_tracking import parse_frame
 
     with RadarSession(load_config("config_radar.json")) as session:
         for fields, payload, timestamp in session.packets():
@@ -76,8 +78,8 @@ class Target:
 
 
 @dataclass
-class PeopleCountingFrame:
-    """One decoded people counting frame.
+class PeopleTrackingFrame:
+    """One decoded people tracking frame.
 
     Attributes:
         points: Array of shape (N, 5) with columns range (m),
@@ -144,9 +146,9 @@ def _parse_heights(body: bytes) -> np.ndarray:
     return heights
 
 
-def parse_frame(payload: bytes, timestamp: float = 0.0) -> PeopleCountingFrame:
-    """Decode the TLV payload of one people counting packet."""
-    frame = PeopleCountingFrame(timestamp=timestamp)
+def parse_frame(payload: bytes, timestamp: float = 0.0) -> PeopleTrackingFrame:
+    """Decode the TLV payload of one people tracking packet."""
+    frame = PeopleTrackingFrame(timestamp=timestamp)
     cursor = 0
 
     while cursor + _TLV_HEADER.size <= len(payload):
@@ -221,9 +223,9 @@ class _AppendWriter:
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="urad-people-counting",
-        description="3D people counting with a uRAD Industrial radar running "
-        "the People Counting firmware (standard or overhead).",
+        prog="urad-people-tracking",
+        description="3D people tracking with a uRAD Industrial radar running "
+        "the People Tracking firmware (standard or overhead).",
     )
     parser.add_argument(
         "-c",

@@ -23,9 +23,11 @@ out-of-box demo (mmWave SDK 3.x):
 - [Perfiles de producto](profiles) listos para usar (puertos serie, rangos
   de plot y configuraciones de chirp) para cada producto soportado.
 - Clientes de aplicación construidos sobre el mismo núcleo:
-  `urad-level-sensing` (level sensing de alta precisión, AWR e IWR) y
-  `urad-people-counting` (3D people counting, estándar y overhead). Cada uno
-  requiere su firmware dedicado, distribuido en los repositorios de producto.
+  `urad-level-sensing` (level sensing de alta precisión, AWR e IWR),
+  `urad-people-tracking` (3D people tracking — antes "people counting" —
+  estándar y overhead) y `urad-vital-signs` (constantes vitales con people
+  tracking). Cada uno requiere su firmware dedicado, distribuido en los
+  repositorios de producto.
 
 Productos soportados: **uRAD Automotive** (AWR1843AoP, 77 GHz), **uRAD
 Automotive HPA** (AWR1843 ISK, 77 GHz) y **uRAD Industrial** (IWR6843AoP,

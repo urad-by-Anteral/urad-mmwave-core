@@ -165,7 +165,7 @@ class RadarSession:
     def packets(self) -> Iterator[tuple[tuple, bytes, float]]:
         """Yield raw ``(header_fields, payload, timestamp)`` packets.
 
-        For application firmwares (e.g. 3D people counting) that share the
+        For application firmwares (e.g. 3D people tracking) that share the
         packet framing but use their own TLV set — decode the payload with
         the application's parser.
         """

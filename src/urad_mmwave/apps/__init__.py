@@ -6,6 +6,8 @@ the product repositories) and builds on the generic packet framing of
 
 - :mod:`urad_mmwave.apps.level_sensing` — High Accuracy Level Sensing
   (uRAD Automotive and uRAD Industrial).
-- :mod:`urad_mmwave.apps.people_counting` — 3D People Counting, standard
-  and overhead (uRAD Industrial).
+- :mod:`urad_mmwave.apps.people_tracking` — 3D People Tracking (formerly
+  People Counting), standard and overhead (uRAD Industrial).
+- :mod:`urad_mmwave.apps.vital_signs` — Vital Signs with People Tracking
+  (uRAD Industrial).
 """

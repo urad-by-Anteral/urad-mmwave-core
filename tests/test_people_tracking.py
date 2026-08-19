@@ -1,4 +1,4 @@
-"""Unit tests for the people counting TLV parser, built on synthetic packets."""
+"""Unit tests for the people tracking TLV parser, built on synthetic packets."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import struct
 import numpy as np
 import pytest
 
-from urad_mmwave.apps.people_counting import (
+from urad_mmwave.apps.people_tracking import (
     TLV_POINT_CLOUD,
     TLV_PRESENCE,
     TLV_TARGET_HEIGHT,

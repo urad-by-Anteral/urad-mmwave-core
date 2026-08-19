@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `urad-vital-signs` CLI and `urad_mmwave.apps.vital_signs` module for the
+  TI "Vital Signs with People Tracking" firmware (Radar Toolbox): decodes
+  the vital signs TLV (type 1040) — heart rate, breathing rate, breathing
+  deviation and both waveform buffers — alongside the shared tracking TLVs,
+  prints a patient status (measuring / present / holding breath) with
+  median-smoothed heart rate, and writes VitalSigns/PointCloud/Targets
+  output files.
+
+### Changed
+- Renamed the people counting application to people tracking, following the
+  TI Radar Toolbox naming: the CLI is now `urad-people-tracking` (was
+  `urad-people-counting`), the module `urad_mmwave.apps.people_tracking`
+  (was `.people_counting`) and the frame class `PeopleTrackingFrame` (was
+  `PeopleCountingFrame`). The UART protocol and output formats are
+  unchanged.
+
 ### Fixed
 - The live viewer no longer logs a spurious serial error on Windows when its
   window is closed: the frame reader thread is now joined before the serial
