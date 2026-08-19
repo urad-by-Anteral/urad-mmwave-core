@@ -258,7 +258,14 @@ def main(argv: list[str] | None = None) -> int:
                 frame = parse_frame(payload, timestamp)
                 status = patient_status(frame)
 
-                if frame.vitals is not None and status == "present":
+                # The firmware keeps measuring at the last locked range bin
+                # even when the tracker drops a person who sits perfectly
+                # still, so feed the median whenever the measurement is
+                # valid rather than only while a track is active.
+                if (
+                    frame.vitals is not None
+                    and frame.vitals.breathing_deviation >= HOLDING_BREATH_THRESHOLD
+                ):
                     recent_heart_rates.append(frame.vitals.heart_rate)
 
                 if frame.vitals is not None and recent_heart_rates:
