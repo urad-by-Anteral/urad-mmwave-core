@@ -33,19 +33,19 @@ product's repository.
 Requires Python 3.9 or later.
 
 ```bash
-pip install git+https://github.com/<org>/urad-mmwave-core.git
+pip install git+https://github.com/urad-by-Anteral/urad-mmwave-core.git
 ```
 
 For Raspberry Pi single-UART setups (GPIO reset support):
 
 ```bash
-pip install "urad-mmwave[rpi] @ git+https://github.com/<org>/urad-mmwave-core.git"
+pip install "urad-mmwave[rpi] @ git+https://github.com/urad-by-Anteral/urad-mmwave-core.git"
 ```
 
 For the live point cloud viewer (`--gui`):
 
 ```bash
-pip install "urad-mmwave[gui] @ git+https://github.com/<org>/urad-mmwave-core.git"
+pip install "urad-mmwave[gui] @ git+https://github.com/urad-by-Anteral/urad-mmwave-core.git"
 ```
 
 ## Quick start (command line)
@@ -123,7 +123,7 @@ the twelve TLV-9 fields followed by the timestamp.
 ## Development
 
 ```bash
-git clone https://github.com/<org>/urad-mmwave-core.git
+git clone https://github.com/urad-by-Anteral/urad-mmwave-core.git
 cd urad-mmwave-core
 pip install -e .[dev]
 pytest          # unit tests (no hardware required)

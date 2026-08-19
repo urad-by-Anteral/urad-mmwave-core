@@ -37,19 +37,19 @@ el repositorio de cada producto.
 Requiere Python 3.9 o superior.
 
 ```bash
-pip install git+https://github.com/<org>/urad-mmwave-core.git
+pip install git+https://github.com/urad-by-Anteral/urad-mmwave-core.git
 ```
 
 Para configuraciones single-UART en Raspberry Pi (soporte de reset por GPIO):
 
 ```bash
-pip install "urad-mmwave[rpi] @ git+https://github.com/<org>/urad-mmwave-core.git"
+pip install "urad-mmwave[rpi] @ git+https://github.com/urad-by-Anteral/urad-mmwave-core.git"
 ```
 
 Para el visor de nube de puntos en tiempo real (`--gui`):
 
 ```bash
-pip install "urad-mmwave[gui] @ git+https://github.com/<org>/urad-mmwave-core.git"
+pip install "urad-mmwave[gui] @ git+https://github.com/urad-by-Anteral/urad-mmwave-core.git"
 ```
 
 ## Inicio rápido (línea de comandos)
@@ -128,7 +128,7 @@ cada objeto detectado, seguido del timestamp epoch del host.
 ## Desarrollo
 
 ```bash
-git clone https://github.com/<org>/urad-mmwave-core.git
+git clone https://github.com/urad-by-Anteral/urad-mmwave-core.git
 cd urad-mmwave-core
 pip install -e .[dev]
 pytest          # tests unitarios (sin hardware)
