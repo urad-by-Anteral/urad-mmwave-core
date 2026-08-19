@@ -74,7 +74,8 @@ def run_viewer(
                 if stop_reading.is_set():
                     return
         except Exception as exc:  # noqa: BLE001 - surface errors from the thread
-            log.error("Frame reader stopped: %s", exc)
+            if not stop_reading.is_set():
+                log.error("Frame reader stopped: %s", exc)
 
     reader = threading.Thread(target=_read_loop, name="urad-frame-reader", daemon=True)
 
@@ -121,3 +122,6 @@ def run_viewer(
     else:  # older Qt bindings
         app.exec_()
     stop_reading.set()
+    # Wait for the reader to leave the serial read before the caller closes
+    # the ports underneath it (pyserial raises from a closed port on Windows).
+    reader.join(timeout=2.0)

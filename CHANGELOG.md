@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] - Unreleased
+## [Unreleased]
+
+### Fixed
+- The live viewer no longer logs a spurious serial error on Windows when its
+  window is closed: the frame reader thread is now joined before the serial
+  ports are closed underneath it.
+
+## [0.1.0] - 2026-08-19
 
 First public release, unifying the Python code previously duplicated across
 the uRAD Automotive, Automotive HPA and Industrial SDKs.
