@@ -56,6 +56,9 @@ def run_viewer(
     heart_wave: deque = deque(maxlen=_WAVEFORM_WINDOW_SAMPLES)
     breath_wave: deque = deque(maxlen=_WAVEFORM_WINDOW_SAMPLES)
     recent_heart_rates: deque = deque(maxlen=10)
+    # The vitals TLV arrives only every ~15 frames; keep the last known
+    # breathing rate so the title does not flicker in between.
+    last_rates = {"breath": None}
     lock = threading.Lock()
     stop_reading = threading.Event()
 
@@ -68,6 +71,7 @@ def run_viewer(
                     with lock:
                         heart_wave.extend(frame.vitals.heart_waveform)
                         breath_wave.extend(frame.vitals.breath_waveform)
+                        last_rates["breath"] = frame.vitals.breathing_rate
                         if frame.vitals.breathing_deviation >= HOLDING_BREATH_THRESHOLD:
                             recent_heart_rates.append(frame.vitals.heart_rate)
                 latest.append(frame)
@@ -101,6 +105,7 @@ def run_viewer(
             heart = list(heart_wave)
             breath = list(breath_wave)
             rates = list(recent_heart_rates)
+            breath_rate = last_rates["breath"]
         try:
             frame = latest.pop()
         except IndexError:
@@ -111,10 +116,10 @@ def run_viewer(
 
         if frame is not None:
             title = f"uRAD vital signs — patient: {patient_status(frame)}"
-            if frame.vitals is not None and rates:
+            if rates and breath_rate is not None:
                 title += (
                     f"  |  heart: {statistics.median(rates):.1f} bpm"
-                    f"  |  breath: {frame.vitals.breathing_rate:.1f} rpm"
+                    f"  |  breath: {breath_rate:.1f} rpm"
                 )
             window.setWindowTitle(title)
 
