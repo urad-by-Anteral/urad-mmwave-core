@@ -151,6 +151,67 @@ def decode_ranges(
     return None
 
 
+def stream(
+    settings: LevelSensingSettings,
+    control_port: str,
+    data_port: str | None = None,
+    gpio_reset_pin: int | None = None,
+    timeout: float = 1.0,
+):
+    """Yield ``(timestamp, (r1, r2, r3))`` continuously until closed.
+
+    Configures the radar once and streams decoded range frames; the sensor
+    is stopped and the ports released when the generator is closed (also on
+    error). Used by the live viewer (``--gui``).
+    """
+    single_port = data_port is None or data_port == control_port
+    control_cfg = SerialConfig(port=control_port, baudrate=115200, timeout=0.3)
+    data_cfg = SerialConfig(
+        port=control_port if single_port else data_port,
+        baudrate=921600,
+        timeout=timeout,
+    )
+
+    if gpio_reset_pin is not None:
+        log.info("Resetting radar via GPIO pin %d", gpio_reset_pin)
+        gpio_reset(gpio_reset_pin)
+
+    commands = build_commands(settings)
+    log.info(
+        "Configuring level sensing on %s (%s, max %.0f m)",
+        control_cfg.port,
+        settings.model,
+        settings.maximum_distance,
+    )
+
+    port = None
+    try:
+        with _open_port(control_cfg) as control:
+            control.reset_input_buffer()
+            for command in commands:
+                response = _send_command(control, command)
+                log.debug("%s -> %s", command, response or "<no response>")
+
+        port = _open_port(data_cfg)
+        port.reset_input_buffer()
+
+        for _fields, payload, timestamp in iter_packets(
+            port, DEFAULT_SYNC_PATTERN, HEADER_FORMAT, max_empty_reads=100
+        ):
+            ranges = decode_ranges(payload, settings.offset)
+            if ranges is not None:
+                yield timestamp, ranges
+    finally:
+        if port is not None and port.is_open:
+            port.close()
+        try:
+            with _open_port(control_cfg) as control:
+                _send_command(control, "sensorStop")
+            log.info("Sensor stopped")
+        except Exception as exc:  # noqa: BLE001 - cleanup must not mask errors
+            log.warning("Could not send sensorStop: %s", exc)
+
+
 def measure(
     settings: LevelSensingSettings,
     control_port: str,
@@ -295,6 +356,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="BCM pin to reset the chip before measuring (Raspberry Pi)",
     )
     parser.add_argument(
+        "--gui",
+        action="store_true",
+        help="Show the three ranges live over time "
+        "(requires: pip install urad-mmwave[gui])",
+    )
+    parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable debug logging"
     )
     parser.add_argument(
@@ -321,6 +388,25 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     try:
+        if args.gui:
+            if args.interval is not None:
+                log.warning(
+                    "--interval is ignored in GUI mode; close the window to stop"
+                )
+            from urad_mmwave.apps.level_sensing_viewer import run_viewer
+
+            samples = stream(
+                settings,
+                control_port=args.control_port,
+                data_port=args.data_port,
+                gpio_reset_pin=args.gpio_reset_pin,
+            )
+            try:
+                run_viewer(samples)
+            finally:
+                samples.close()  # runs the generator cleanup (sensorStop)
+            return 0
+
         while True:
             result = measure(
                 settings,

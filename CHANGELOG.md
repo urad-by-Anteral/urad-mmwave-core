@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Live distance view for level sensing: `urad-level-sensing --gui` streams
+  continuously (new `stream()` API alongside the one-shot `measure()`) and
+  plots the three high-accuracy ranges over time with the latest values in
+  the window title.
 - Live top view for people tracking: `urad-people-tracking --gui` shows
   the point cloud (SNR-sized markers), the tracked people as numbered
   circles colored per track id, and the tracker zones defined in the
