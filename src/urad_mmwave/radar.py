@@ -146,15 +146,26 @@ class RadarSession:
         return False
 
     def _configure(self, commands: list[str]) -> None:
+        responded = 0
         with _open_port(self._config.control_serial) as control_port:
             control_port.reset_input_buffer()
             for command in commands:
                 response = _send_command(control_port, command)
                 log.debug("%s -> %s", command, response or "<no response>")
+                if response:
+                    responded += 1
                 if "Error" in response:
                     log.warning(
                         "Radar reported an error for '%s': %s", command, response
                     )
+        if commands and responded == 0:
+            raise RuntimeError(
+                f"The radar did not respond to any of the {len(commands)} "
+                f"configuration commands on {self._config.control_serial.port}. "
+                "Check that this is the control port and power-cycle the "
+                "radar — application firmwares typically accept only one "
+                "configuration per boot."
+            )
 
     def frames(self) -> Iterator[Frame]:
         """Yield decoded out-of-box frames from the data port."""
@@ -162,12 +173,20 @@ class RadarSession:
             raise RuntimeError("Session not started; use 'with RadarSession(...)'")
         return read_frames(self._data_port, self._config.packet)
 
-    def packets(self) -> Iterator[tuple[tuple, bytes, float]]:
+    def packets(
+        self, max_empty_reads: int | None = 100
+    ) -> Iterator[tuple[tuple, bytes, float]]:
         """Yield raw ``(header_fields, payload, timestamp)`` packets.
 
         For application firmwares (e.g. 3D people tracking) that share the
         packet framing but use their own TLV set — decode the payload with
         the application's parser.
+
+        Raises :class:`~urad_mmwave.parser.StreamTimeoutError` after
+        ``max_empty_reads`` consecutive empty reads (each bounded by the
+        data port timeout) — with the default 0.3 s timeout that is ~30 s
+        of silence, which means the sensor never started or died. Pass
+        ``None`` to wait indefinitely.
         """
         if self._data_port is None:
             raise RuntimeError("Session not started; use 'with RadarSession(...)'")
@@ -175,6 +194,7 @@ class RadarSession:
             self._data_port,
             self._config.packet.sync_pattern,
             self._config.packet.header_format,
+            max_empty_reads=max_empty_reads,
         )
 
     def stop(self) -> None:

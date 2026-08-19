@@ -27,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - The live viewer no longer logs a spurious serial error on Windows when its
   window is closed: the frame reader thread is now joined before the serial
   ports are closed underneath it.
+- `RadarSession` now fails fast with a clear error when the radar does not
+  respond to any configuration command (typically after a previous session,
+  since application firmwares accept only one configuration per boot and
+  need a power cycle), instead of silently continuing towards a hang.
+- `RadarSession.packets()` now raises `StreamTimeoutError` after ~30 s
+  without data by default (`max_empty_reads=100`) instead of waiting
+  forever, so application CLIs exit with a useful error when the sensor
+  never starts.
 
 ## [0.1.0] - 2026-08-19
 
