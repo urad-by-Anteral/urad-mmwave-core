@@ -55,6 +55,10 @@ TLV_PRESENCE = 1021
 MAX_TLV_TYPE = 2000
 MAX_TLV_LENGTH = 10000
 
+# The Radar Toolbox firmwares pad each packet to a 32-byte multiple with
+# 0xBE bytes; reading the padding as a TLV header yields this word.
+PADDING_WORD = 0xBEBEBEBE
+
 _TLV_HEADER = struct.Struct("<2I")
 _POINT_UNIT = struct.Struct("<5f")  # elevation, azimuth, doppler, range, snr units
 # elevation, azimuth (int8), doppler (int16), range, snr (uint16).
@@ -155,6 +159,8 @@ def parse_frame(payload: bytes, timestamp: float = 0.0) -> PeopleTrackingFrame:
         tlv_type, tlv_length = _TLV_HEADER.unpack_from(payload, cursor)
         cursor += _TLV_HEADER.size
 
+        if tlv_type == PADDING_WORD:
+            break  # end-of-frame alignment padding
         if tlv_type > MAX_TLV_TYPE or tlv_length > MAX_TLV_LENGTH:
             log.warning(
                 "Implausible TLV (type=%d, length=%d); discarding rest of frame",

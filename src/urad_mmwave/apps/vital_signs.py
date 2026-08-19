@@ -45,6 +45,7 @@ from urad_mmwave.apps.people_tracking import (
     _TLV_HEADER,
     MAX_TLV_LENGTH,
     MAX_TLV_TYPE,
+    PADDING_WORD,
     TLV_POINT_CLOUD,
     TLV_PRESENCE,
     TLV_TARGET_INDEX,
@@ -128,6 +129,8 @@ def parse_frame(payload: bytes, timestamp: float = 0.0) -> VitalSignsFrame:
         tlv_type, tlv_length = _TLV_HEADER.unpack_from(payload, cursor)
         cursor += _TLV_HEADER.size
 
+        if tlv_type == PADDING_WORD:
+            break  # end-of-frame alignment padding
         if tlv_type > MAX_TLV_TYPE or tlv_length > MAX_TLV_LENGTH:
             log.warning(
                 "Implausible TLV (type=%d, length=%d); discarding rest of frame",

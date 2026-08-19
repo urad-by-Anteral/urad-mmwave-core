@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   unchanged.
 
 ### Fixed
+- The people tracking and vital signs parsers now recognize the 0xBE
+  end-of-frame alignment padding emitted by the Radar Toolbox firmwares,
+  instead of logging an "implausible TLV" warning on every frame.
 - The live viewer no longer logs a spurious serial error on Windows when its
   window is closed: the frame reader thread is now joined before the serial
   ports are closed underneath it.

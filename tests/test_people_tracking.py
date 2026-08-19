@@ -102,3 +102,13 @@ def test_unknown_tlv_skipped_and_truncated_tlv_aborts():
     truncated = struct.pack("<2I", TLV_TARGET_LIST, 112)  # declares body, none present
     frame = parse_frame(truncated)
     assert frame.targets == []
+
+
+def test_trailing_alignment_padding_ends_frame(caplog):
+    # Radar Toolbox firmwares pad the packet to 32-byte multiples with 0xBE.
+    payload = _target_tlv(2, (1.0, 1.0, 1.0), 0.5) + b"\xbe" * 12
+    with caplog.at_level("WARNING"):
+        frame = parse_frame(payload)
+
+    assert len(frame.targets) == 1
+    assert not caplog.records
