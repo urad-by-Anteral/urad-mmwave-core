@@ -104,6 +104,50 @@ def test_unknown_tlv_skipped_and_truncated_tlv_aborts():
     assert frame.targets == []
 
 
+def test_points_to_xy_projection():
+    from urad_mmwave.apps.people_tracking import points_to_xy
+
+    # (range, azimuth°, elevation°, doppler, snr)
+    points = np.array(
+        [
+            [2.0, 0.0, 0.0, 0.0, 100.0],  # straight ahead -> x=0, y=2
+            [2.0, 90.0, 0.0, 0.0, 100.0],  # full right -> x=2, y=0
+            [2.0, 0.0, 60.0, 0.0, 100.0],  # elevated -> y shortened by cos(60°)
+        ]
+    )
+    x, y = points_to_xy(points)
+    assert x == pytest.approx([0.0, 2.0, 0.0], abs=1e-9)
+    assert y == pytest.approx([2.0, 0.0, 1.0], abs=1e-9)
+
+    x_empty, y_empty = points_to_xy(np.zeros((0, 5)))
+    assert len(x_empty) == 0 and len(y_empty) == 0
+
+
+def test_read_boundary_boxes(tmp_path):
+    from urad_mmwave.apps.people_tracking import read_boundary_boxes
+
+    cfg = tmp_path / "chirp.cfg"
+    cfg.write_text(
+        "% comment\n"
+        "sensorStop\n"
+        "staticBoundaryBox -3 3 0.5 7.5 0 3\n"
+        "boundaryBox -4 4 0 8 0 3\n"
+        "presenceBoundaryBox -3 3 0.5 7.5 0 3\n"
+        "sensorStart\n"
+    )
+    boxes = read_boundary_boxes(cfg)
+    assert boxes["boundaryBox"] == (-4.0, 4.0, 0.0, 8.0, 0.0, 3.0)
+    assert boxes["staticBoundaryBox"] == (-3.0, 3.0, 0.5, 7.5, 0.0, 3.0)
+    assert boxes["presenceBoundaryBox"] == (-3.0, 3.0, 0.5, 7.5, 0.0, 3.0)
+
+
+def test_track_colors_stable_and_distinct():
+    from urad_mmwave.apps.people_tracking_viewer import track_color
+
+    assert track_color(3) == track_color(3)
+    assert track_color(0) != track_color(1)
+
+
 def test_trailing_alignment_padding_ends_frame(caplog):
     # Radar Toolbox firmwares pad the packet to 32-byte multiples with 0xBE.
     payload = _target_tlv(2, (1.0, 1.0, 1.0), 0.5) + b"\xbe" * 12

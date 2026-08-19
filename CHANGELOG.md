@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Live top view for people tracking: `urad-people-tracking --gui` shows
+  the point cloud (SNR-sized markers), the tracked people as numbered
+  circles colored per track id, and the tracker zones defined in the
+  chirp configuration (`boundaryBox`, `staticBoundaryBox`,
+  `presenceBoundaryBox`); the plot is framed to the boundary box.
+
 ### Fixed
 - Level sensing range 3 no longer reads 62.5 mm short when the low word of
   its fixed-point value is >= 0x8000: the legacy decode treated that word

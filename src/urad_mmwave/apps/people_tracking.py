@@ -150,6 +150,38 @@ def _parse_heights(body: bytes) -> np.ndarray:
     return heights
 
 
+def points_to_xy(points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Project spherical points (range, azimuth°, elevation°, ...) to x/y meters."""
+    if not len(points):
+        return np.zeros(0), np.zeros(0)
+    range_m = points[:, 0]
+    azimuth = np.radians(points[:, 1])
+    elevation = np.radians(points[:, 2])
+    return (
+        range_m * np.cos(elevation) * np.sin(azimuth),
+        range_m * np.cos(elevation) * np.cos(azimuth),
+    )
+
+
+BOUNDARY_BOX_COMMANDS = ("boundaryBox", "staticBoundaryBox", "presenceBoundaryBox")
+
+
+def read_boundary_boxes(chirp_config_path: str | Path) -> dict[str, tuple[float, ...]]:
+    """Extract the tracker zones from a chirp configuration file.
+
+    Returns a mapping of command name to ``(xmin, xmax, ymin, ymax, zmin,
+    zmax)`` for each boundary box command present in the file.
+    """
+    from urad_mmwave.radar import read_chirp_config
+
+    boxes: dict[str, tuple[float, ...]] = {}
+    for command in read_chirp_config(chirp_config_path):
+        parts = command.split()
+        if parts[0] in BOUNDARY_BOX_COMMANDS and len(parts) == 7:
+            boxes[parts[0]] = tuple(float(value) for value in parts[1:])
+    return boxes
+
+
 def parse_frame(payload: bytes, timestamp: float = 0.0) -> PeopleTrackingFrame:
     """Decode the TLV payload of one people tracking packet."""
     frame = PeopleTrackingFrame(timestamp=timestamp)
@@ -252,6 +284,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--no-save", action="store_true", help="Disable all file output"
     )
     parser.add_argument(
+        "--gui",
+        action="store_true",
+        help="Show the live top view with tracked people and tracker zones "
+        "(requires: pip install urad-mmwave[gui])",
+    )
+    parser.add_argument(
         "--duration",
         type=float,
         metavar="SECONDS",
@@ -302,8 +340,7 @@ def main(argv: list[str] | None = None) -> int:
                     )
                 log.info("Writing output files to %s", output_dir)
 
-            for _fields, payload, timestamp in session.packets():
-                frame = parse_frame(payload, timestamp)
+            def handle_frame(frame: PeopleTrackingFrame) -> None:
                 print(
                     f"targets: {len(frame.targets)}  points: {len(frame.points)}"
                     + (
@@ -315,7 +352,7 @@ def main(argv: list[str] | None = None) -> int:
 
                 if writers:
                     writers["PointCloud"].write_row(
-                        [v for p in frame.points for v in p], timestamp
+                        [v for p in frame.points for v in p], frame.timestamp
                     )
                     writers["Targets"].write_row(
                         [
@@ -323,18 +360,40 @@ def main(argv: list[str] | None = None) -> int:
                             for t in frame.targets
                             for v in (t.tid, *t.position, *t.velocity, *t.acceleration)
                         ],
-                        timestamp,
+                        frame.timestamp,
                     )
                     writers["TargetsIndex"].write_row(
-                        list(frame.target_index), timestamp
+                        list(frame.target_index), frame.timestamp
                     )
                     writers["TargetsHeight"].write_row(
-                        [v for h in frame.heights for v in h], timestamp
+                        [v for h in frame.heights for v in h], frame.timestamp
                     )
 
-                if args.duration is not None and time() - start_time >= args.duration:
-                    log.info("Reached %.1f s; stopping", args.duration)
-                    break
+            if args.gui:
+                if args.duration is not None:
+                    log.warning(
+                        "--duration is ignored in GUI mode; close the window to stop"
+                    )
+                from urad_mmwave.apps.people_tracking_viewer import run_viewer
+
+                run_viewer(
+                    config,
+                    (
+                        parse_frame(payload, timestamp)
+                        for _fields, payload, timestamp in session.packets()
+                    ),
+                    on_frame=handle_frame,
+                )
+            else:
+                for _fields, payload, timestamp in session.packets():
+                    frame = parse_frame(payload, timestamp)
+                    handle_frame(frame)
+                    if (
+                        args.duration is not None
+                        and time() - start_time >= args.duration
+                    ):
+                        log.info("Reached %.1f s; stopping", args.duration)
+                        break
     except KeyboardInterrupt:
         log.info("Interrupted by user; stopping sensor")
     except Exception as exc:  # noqa: BLE001 - report cleanly instead of a traceback
