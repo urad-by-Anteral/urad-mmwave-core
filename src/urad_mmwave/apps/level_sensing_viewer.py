@@ -20,7 +20,7 @@ from urad_mmwave.viewer import _import_pyqtgraph
 log = logging.getLogger(__name__)
 
 _REFRESH_INTERVAL_MS = 100
-_HISTORY_SECONDS = 120.0
+_HISTORY_SECONDS = 10.0
 
 # One distinguishable color per range curve.
 _RANGE_COLORS = [(230, 25, 75), (60, 180, 75), (67, 99, 216)]
