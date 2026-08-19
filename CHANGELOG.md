@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.1] - 2026-08-19
+
+Every viewer in this release was validated against a uRAD Industrial
+(IWR6843AoP) over USB.
 
 ### Added
 - Live waveform view for vital signs: `urad-vital-signs --gui` plots the
