@@ -38,6 +38,7 @@ log = logging.getLogger(__name__)
 HEADER_FORMAT = "<Q7I"  # sync + version, totalLen, platform, frame, cpu, objs, tlvs
 TLV_HEADER_FORMAT = "<2I"
 TLV_RANGES = 1
+TLV_RAW_IQ = 2  # raw ADC samples, enabled by the second guiMonitor flag
 
 _TLV_HEADER = struct.Struct(TLV_HEADER_FORMAT)
 _DESCRIPTOR_STRUCT = struct.Struct("<2H")  # numDetectedObj, xyzQFormat
@@ -50,10 +51,13 @@ _RANGES_STRUCT = struct.Struct("<3H3h")
 _CHIRP_SLOPE_MAX = 31.23
 _CHIRP_SLOPE_MIN = 1.87
 _SLOPE_CONSTANT = 374.7405725
-_SAMPLING_RATE_HZ = 20
 _MIN_DISTANCE_M = 12
 _MAX_DISTANCE_M = 150
 _FIXED_POINT_SCALE = 2**20
+
+_SPEED_OF_LIGHT = 299792458.0
+_ADC_SAMPLING_HZ = 5e6
+SPECTRUM_NFFT = 4096
 
 
 @dataclass
@@ -66,10 +70,13 @@ class LevelSensingSettings:
     range_max: float = 10.0  # upper limit of the range of interest
     offset: float = 0.0  # added to every measured range
     n_measurements: int = 5  # final result is the mean of N frames
+    sampling_rate: float = 20.0  # frames per second, clamped to [2, 20]
+    raw_iq: bool = False  # also stream the raw ADC samples (TLV type 2)
 
     def __post_init__(self) -> None:
         if self.model not in ("AWR", "IWR"):
             raise ValueError(f"model must be 'AWR' or 'IWR', got {self.model!r}")
+        self.sampling_rate = min(max(self.sampling_rate, 2.0), 20.0)
 
 
 @dataclass(frozen=True)
@@ -102,7 +109,7 @@ def build_commands(settings: LevelSensingSettings) -> list[str]:
 
     start_freq = 77 if settings.model == "AWR" else 60
     slope = chirp_slope(settings.maximum_distance)
-    frame_period_ms = 1e3 / _SAMPLING_RATE_HZ
+    frame_period_ms = 1e3 / settings.sampling_rate
 
     return [
         "flushCfg",
@@ -114,7 +121,7 @@ def build_commands(settings: LevelSensingSettings) -> list[str]:
         "chirpCfg 0 0 0 0 0 0 0 1",
         f"frameCfg 0 0 10 0 {frame_period_ms:.0f} 1 0",
         "lowPower 0 0",
-        "guiMonitor 1 0 0 0 0 1",
+        f"guiMonitor 1 {int(settings.raw_iq)} 0 0 0 1",
         f"RangeLimitCfg 2 1 {range_min:.1f} {range_max:.1f}",
         "sensorStart",
     ]
@@ -151,6 +158,61 @@ def decode_ranges(
     return None
 
 
+def decode_iq(payload: bytes) -> np.ndarray | None:
+    """Extract the complex ADC samples from the raw I/Q TLV, if present.
+
+    The firmware interleaves I and Q as float32 (``I0 Q0 I1 Q1 …``); the
+    returned array is ``I + 1j*Q``. Requires ``raw_iq`` in the settings so
+    the firmware emits TLV type 2.
+    """
+    cursor = 0
+    while cursor + _TLV_HEADER.size <= len(payload):
+        tlv_type, tlv_length = _TLV_HEADER.unpack_from(payload, cursor)
+        cursor += _TLV_HEADER.size
+        if tlv_type == TLV_RAW_IQ and cursor + tlv_length <= len(payload):
+            samples = np.frombuffer(
+                payload, dtype="<f4", count=tlv_length // 4, offset=cursor
+            )
+            return samples[0::2] + 1j * samples[1::2]
+        cursor += tlv_length
+    return None
+
+
+def range_spectrum(
+    iq: np.ndarray, maximum_distance: float, nfft: int = SPECTRUM_NFFT
+) -> tuple[np.ndarray, np.ndarray]:
+    """Range profile from one frame of raw ADC samples.
+
+    Reproduces the processing of the legacy uRAD GUI: DC removal, Hanning
+    window, zero-padded FFT and the legacy amplitude scaling. Returns the
+    distance axis (m, negative to positive) and the power spectrum (dB);
+    real targets appear on the positive half.
+    """
+    i_samples, q_samples = iq.real, iq.imag
+    complex_vector = (i_samples - i_samples.mean()) - 1j * (
+        q_samples - q_samples.mean()
+    )
+    count = len(complex_vector)
+    windowed = complex_vector * np.hanning(count) * 2 / count / 2**18
+    with np.errstate(divide="ignore"):
+        power_db = 20 * np.log10(
+            2 * np.abs(np.fft.fftshift(np.fft.fft(windowed, nfft)))
+        )
+    slope_hz_per_s = chirp_slope(maximum_distance) * 1e12
+    beat_axis = (_ADC_SAMPLING_HZ / 2) * np.linspace(-1, 1, nfft)
+    range_axis = _SPEED_OF_LIGHT / (2 * slope_hz_per_s) * beat_axis
+    return range_axis, power_db
+
+
+@dataclass(frozen=True)
+class LevelSensingFrame:
+    """One streamed level sensing frame."""
+
+    timestamp: float
+    ranges: tuple[float, float, float]
+    iq: np.ndarray | None = None  # raw ADC samples, only with raw_iq settings
+
+
 def stream(
     settings: LevelSensingSettings,
     control_port: str,
@@ -158,11 +220,12 @@ def stream(
     gpio_reset_pin: int | None = None,
     timeout: float = 1.0,
 ):
-    """Yield ``(timestamp, (r1, r2, r3))`` continuously until closed.
+    """Yield :class:`LevelSensingFrame` continuously until closed.
 
-    Configures the radar once and streams decoded range frames; the sensor
-    is stopped and the ports released when the generator is closed (also on
-    error). Used by the live viewer (``--gui``).
+    Configures the radar once and streams decoded range frames (with the
+    raw ADC samples when ``settings.raw_iq`` is set); the sensor is stopped
+    and the ports released when the generator is closed (also on error).
+    Used by the live viewers (``--gui`` and ``--spectrum``).
     """
     single_port = data_port is None or data_port == control_port
     control_cfg = SerialConfig(port=control_port, baudrate=115200, timeout=0.3)
@@ -200,7 +263,8 @@ def stream(
         ):
             ranges = decode_ranges(payload, settings.offset)
             if ranges is not None:
-                yield timestamp, ranges
+                iq = decode_iq(payload) if settings.raw_iq else None
+                yield LevelSensingFrame(timestamp=timestamp, ranges=ranges, iq=iq)
     finally:
         if port is not None and port.is_open:
             port.close()
@@ -362,6 +426,20 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "(requires: pip install urad-mmwave[gui])",
     )
     parser.add_argument(
+        "--spectrum",
+        action="store_true",
+        help="Show the live range profile computed from the raw ADC "
+        "samples, with the detected peaks marked "
+        "(requires: pip install urad-mmwave[gui])",
+    )
+    parser.add_argument(
+        "--sampling-rate",
+        type=float,
+        metavar="HZ",
+        help="Frames per second, 2-20 (default: 20, or 10 with --spectrum "
+        "to leave headroom for the raw data on the UART)",
+    )
+    parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable debug logging"
     )
     parser.add_argument(
@@ -378,6 +456,12 @@ def main(argv: list[str] | None = None) -> int:
         stream=sys.stderr,
     )
 
+    if args.sampling_rate is not None:
+        sampling_rate = args.sampling_rate
+    else:
+        # Leave UART headroom for the ~4 KB of raw samples per frame.
+        sampling_rate = 10.0 if args.spectrum else 20.0
+
     settings = LevelSensingSettings(
         model=args.model,
         maximum_distance=args.max_distance,
@@ -385,15 +469,20 @@ def main(argv: list[str] | None = None) -> int:
         range_max=args.range[1],
         offset=args.offset,
         n_measurements=args.measurements,
+        sampling_rate=sampling_rate,
+        raw_iq=args.spectrum,
     )
 
     try:
-        if args.gui:
+        if args.gui or args.spectrum:
             if args.interval is not None:
                 log.warning(
                     "--interval is ignored in GUI mode; close the window to stop"
                 )
-            from urad_mmwave.apps.level_sensing_viewer import run_viewer
+            from urad_mmwave.apps.level_sensing_viewer import (
+                run_spectrum_viewer,
+                run_viewer,
+            )
 
             samples = stream(
                 settings,
@@ -402,7 +491,10 @@ def main(argv: list[str] | None = None) -> int:
                 gpio_reset_pin=args.gpio_reset_pin,
             )
             try:
-                run_viewer(samples)
+                if args.spectrum:
+                    run_spectrum_viewer(settings, samples)
+                else:
+                    run_viewer(samples)
             finally:
                 samples.close()  # runs the generator cleanup (sensorStop)
             return 0

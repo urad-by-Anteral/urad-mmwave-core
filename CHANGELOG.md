@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Live range profile for level sensing: `urad-level-sensing --spectrum`
+  enables the raw ADC stream (TLV type 2, second `guiMonitor` flag) and
+  shows the full FFT range profile with the three detected peaks marked
+  and their amplitudes — the modern equivalent of the legacy
+  `plotSpectrum` GUI, with the same processing (DC removal, Hanning,
+  4096-point FFT). New APIs: `decode_iq()`, `range_spectrum()`, and
+  `sampling_rate`/`raw_iq` settings (frame rate was fixed at 20 Hz).
 - Live distance view for level sensing: `urad-level-sensing --gui` streams
   continuously (new `stream()` API alongside the one-shot `measure()`) and
   plots the three high-accuracy ranges over time with the latest values in

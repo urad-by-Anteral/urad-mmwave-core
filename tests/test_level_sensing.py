@@ -62,6 +62,59 @@ def test_invalid_model_rejected():
         LevelSensingSettings(model="XWR")
 
 
+def test_build_commands_raw_iq_and_sampling_rate():
+    from urad_mmwave.apps.level_sensing import build_commands
+
+    plain = build_commands(LevelSensingSettings(model="IWR"))
+    raw = build_commands(
+        LevelSensingSettings(model="IWR", raw_iq=True, sampling_rate=2)
+    )
+    assert "guiMonitor 1 0 0 0 0 1" in plain
+    assert "frameCfg 0 0 10 0 50 1 0" in plain  # 20 Hz default
+    assert "guiMonitor 1 1 0 0 0 1" in raw
+    assert "frameCfg 0 0 10 0 500 1 0" in raw  # 2 Hz
+
+    clamped = LevelSensingSettings(model="IWR", sampling_rate=100)
+    assert clamped.sampling_rate == 20.0
+
+
+def test_decode_iq_roundtrip():
+    import numpy as np
+
+    from urad_mmwave.apps.level_sensing import TLV_RAW_IQ, decode_iq
+
+    i_samples = np.array([1.0, 2.0, 3.0], dtype="<f4")
+    q_samples = np.array([-1.0, 0.5, 0.25], dtype="<f4")
+    interleaved = np.empty(6, dtype="<f4")
+    interleaved[0::2] = i_samples
+    interleaved[1::2] = q_samples
+    payload = struct.pack("<2I", TLV_RAW_IQ, interleaved.nbytes) + interleaved.tobytes()
+
+    iq = decode_iq(payload)
+    assert iq is not None
+    assert iq.real == pytest.approx(i_samples)
+    assert iq.imag == pytest.approx(q_samples)
+
+    assert decode_iq(_ranges_payload(1.0, 2.0, 3.0)) is None
+
+
+def test_range_spectrum_peak_at_target_distance():
+    import numpy as np
+
+    from urad_mmwave.apps.level_sensing import chirp_slope, range_spectrum
+
+    maximum_distance = 12.0
+    target_m = 5.0
+    slope_hz_per_s = chirp_slope(maximum_distance) * 1e12
+    beat_hz = 2 * slope_hz_per_s * target_m / 299792458.0
+    t = np.arange(512) / 5e6
+    iq = np.cos(2 * np.pi * beat_hz * t) - 1j * np.sin(2 * np.pi * beat_hz * t)
+
+    range_axis, power_db = range_spectrum(iq, maximum_distance)
+    peak_m = range_axis[np.argmax(power_db)]
+    assert abs(abs(peak_m) - target_m) < 0.02
+
+
 def test_decode_ranges_roundtrip():
     payload = _ranges_payload(5.0, 7.25, 0.5)
     ranges = decode_ranges(payload)
