@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+None of the new application clients in this section has been validated
+against real hardware yet — they are implemented strictly from the TI Radar
+Toolbox 4.00.00.05 documentation and C sources, with synthetic-frame test
+coverage.
+
+### Added
+- `urad-area-scanner`: client for the TI Area Scanner demo (uRAD
+  Industrial) — dynamic and static point clouds, track list, host-side
+  critical/warning safety zones with track projection, live top view
+  (`--gui`) and legacy text output.
+- `urad-automated-doors`: client for the TI Automated Doors and Gates demo
+  (uRAD Industrial) — replicates the firmware door trigger (approach zone,
+  time-to-door, hold frames) and static obstruction detection on the host,
+  with a live top view showing the door state.
+- `urad-small-obstacle`: client for the TI Small Obstacle Detection demo
+  (uRAD Industrial) — people-tracking TLV set plus the zone occupancy
+  bitmask TLV (1030), height-colored point cloud view with a Y-Z side
+  panel.
+- `urad-cpd`: client for the TI CPD with Classification demo (uRAD
+  Industrial) — parses the compressed point cloud, and ports the TI
+  visualizer's zone mapping, occupancy state machine and adult/child
+  classification to the host; zone-centric live view.
+- `urad-mrr`: client for the TI Medium Range Radar demo (uRAD Automotive)
+  — receive-only client (the firmware uses a compiled-in configuration and
+  streams from boot on the auxiliary UART at 921600 baud); parses detected
+  points, clusters, tracked objects and the parking-assist TLV, with a
+  combined MRR/USRR top view.
+
 ## [0.2.1] - 2026-08-19
 
 Every viewer in this release was validated against a uRAD Industrial

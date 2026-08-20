@@ -25,9 +25,15 @@ out-of-box demo (mmWave SDK 3.x):
 - Clientes de aplicación construidos sobre el mismo núcleo:
   `urad-level-sensing` (level sensing de alta precisión, AWR e IWR),
   `urad-people-tracking` (3D people tracking — antes "people counting" —
-  estándar y overhead) y `urad-vital-signs` (constantes vitales con people
-  tracking). Cada uno requiere su firmware dedicado, distribuido en los
-  repositorios de producto.
+  estándar y overhead), `urad-vital-signs` (constantes vitales con people
+  tracking), `urad-area-scanner` (escáner de área con detección de objetos
+  estáticos y zonas de seguridad), `urad-automated-doors` (disparo de
+  puertas y portones automáticos), `urad-small-obstacle` (detección de
+  obstáculos pequeños para robots móviles), `urad-cpd` (ocupación de
+  cabina / detección de presencia infantil con clasificación adulto-niño)
+  y `urad-mrr` (radar de medio alcance ADAS con clustering, tracking y
+  asistencia al aparcamiento). Cada uno requiere su firmware dedicado,
+  distribuido en los repositorios de producto.
 
 Productos soportados: **uRAD Automotive** (AWR1843AoP, 77 GHz), **uRAD
 Automotive HPA** (AWR1843 ISK, 77 GHz) y **uRAD Industrial** (IWR6843AoP,

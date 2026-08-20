@@ -20,9 +20,15 @@ firmware (mmWave SDK 3.x):
   chirp configurations) for every supported product.
 - Application clients built on the same core: `urad-level-sensing`
   (high accuracy level sensing, AWR and IWR), `urad-people-tracking`
-  (3D people tracking — formerly "people counting" — standard and overhead)
-  and `urad-vital-signs` (vital signs with people tracking). Each requires
-  its dedicated firmware, distributed in the product repositories.
+  (3D people tracking — formerly "people counting" — standard and overhead),
+  `urad-vital-signs` (vital signs with people tracking), `urad-area-scanner`
+  (area scanner with static object detection and safety zones),
+  `urad-automated-doors` (automated doors and gates trigger),
+  `urad-small-obstacle` (small obstacle detection for mobile robots),
+  `urad-cpd` (in-cabin occupancy / child presence detection with adult-child
+  classification) and `urad-mrr` (medium range radar ADAS demo with
+  clustering, tracking and parking assist). Each requires its dedicated
+  firmware, distributed in the product repositories.
 
 Supported products: **uRAD Automotive** (AWR1843AoP, 77 GHz), **uRAD
 Automotive HPA** (AWR1843 ISK, 77 GHz) and **uRAD Industrial** (IWR6843AoP,
