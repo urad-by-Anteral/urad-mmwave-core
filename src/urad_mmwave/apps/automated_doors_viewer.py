@@ -120,8 +120,13 @@ def run_viewer(
     # Approach zone: tracks inside it moving towards the door trigger it.
     zone_pen = pg.mkPen(color=(31, 119, 180), width=2, style=pen_styles.DashLine)
     plot.plot(
-        [-door.half_width, door.half_width, door.half_width, -door.half_width,
-         -door.half_width],
+        [
+            -door.half_width,
+            door.half_width,
+            door.half_width,
+            -door.half_width,
+            -door.half_width,
+        ],
         [0.0, 0.0, door.depth, door.depth, 0.0],
         pen=zone_pen,
         name="Approach zone",
@@ -142,7 +147,10 @@ def run_viewer(
     )
     plot.addItem(dynamic_scatter)
     static_scatter = pg.ScatterPlotItem(
-        pen=None, brush=pg.mkBrush(255, 130, 48, 200), symbol="s", size=8,
+        pen=None,
+        brush=pg.mkBrush(255, 130, 48, 200),
+        symbol="s",
+        size=8,
         name="Static points",
     )
     plot.addItem(static_scatter)
@@ -216,7 +224,9 @@ def run_viewer(
             if tid not in seen:
                 plot.removeItem(track_labels.pop(tid))
 
-        door_bar.setOpts(brush=pg.mkBrush(*door_color(frame.door_open, frame.obstructed)))
+        door_bar.setOpts(
+            brush=pg.mkBrush(*door_color(frame.door_open, frame.obstructed))
+        )
         _set_door_text("OPEN" if frame.door_open else "CLOSED")
 
         obstruction = ", STATIC OBSTRUCTION" if frame.obstructed else ""

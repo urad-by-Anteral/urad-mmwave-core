@@ -145,9 +145,7 @@ def run_viewer(
     pg.setConfigOption("background", "w")
     pg.setConfigOption("foreground", "k")
     app = pg.mkQApp("uRAD small obstacle detection")
-    window = pg.GraphicsLayoutWidget(
-        show=True, title="uRAD small obstacle detection"
-    )
+    window = pg.GraphicsLayoutWidget(show=True, title="uRAD small obstacle detection")
     top = window.addPlot(row=0, col=0, title="Obstacles (top view)")
     top.setLabel("bottom", "X (m)")
     top.setLabel("left", "Y (m)")
@@ -234,9 +232,7 @@ def run_viewer(
         top_item.setPen(pen)
         side_item.setPen(pen)
         zone_label.setColor(pg.mkColor(*color))
-        zone_label.setText(
-            f"zone {index}: {'OCCUPIED' if occupied else 'clear'}"
-        )
+        zone_label.setText(f"zone {index}: {'OCCUPIED' if occupied else 'clear'}")
 
     def _refresh() -> None:
         try:
