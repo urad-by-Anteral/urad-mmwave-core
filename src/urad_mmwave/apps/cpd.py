@@ -434,9 +434,7 @@ def points_to_cabin(points: np.ndarray, sensor: SensorPosition) -> np.ndarray:
     x2 = math.cos(xz) * x1 + math.sin(xz) * z1
     z2 = -math.sin(xz) * x1 + math.cos(xz) * z1
 
-    return np.column_stack(
-        (x2 + sensor.x, y2 + sensor.y, z2 + sensor.z, snr)
-    )
+    return np.column_stack((x2 + sensor.x, y2 + sensor.y, z2 + sensor.z, snr))
 
 
 def assign_zones(cabin_points: np.ndarray, zones: list[CabinZone]) -> np.ndarray:
@@ -453,9 +451,12 @@ def assign_zones(cabin_points: np.ndarray, zones: list[CabinZone]) -> np.ndarray
     for column, zone in enumerate(zones):
         for xmin, xmax, ymin, ymax, zmin, zmax in zone.cuboids:
             inside = (
-                (x > xmin) & (x < xmax)
-                & (y > ymin) & (y < ymax)
-                & (z > zmin) & (z < zmax)
+                (x > xmin)
+                & (x < xmax)
+                & (y > ymin)
+                & (y < ymax)
+                & (z > zmin)
+                & (z < zmax)
             )
             zone_map[:, column] |= inside
     return zone_map
@@ -568,9 +569,7 @@ class OccupancyTracker:
         max_avg_snr = params.enter_snr_2
         for neighbor_id in zone.neighbors:
             if 1 <= neighbor_id <= len(self._trackers):
-                max_avg_snr = max(
-                    max_avg_snr, self._trackers[neighbor_id - 1].avg_snr
-                )
+                max_avg_snr = max(max_avg_snr, self._trackers[neighbor_id - 1].avg_snr)
 
         if tracker.state == 0:  # NOT_OCCUPIED
             if (
