@@ -10,4 +10,12 @@ the product repositories) and builds on the generic packet framing of
   People Counting), standard and overhead (uRAD Industrial).
 - :mod:`urad_mmwave.apps.vital_signs` — Vital Signs with People Tracking
   (uRAD Industrial).
+- :mod:`urad_mmwave.apps.area_scanner` — Area Scanner with static object
+  detection and safety zones (uRAD Industrial).
+- :mod:`urad_mmwave.apps.automated_doors` — Automated Doors and Gates
+  trigger logic (uRAD Industrial).
+- :mod:`urad_mmwave.apps.small_obstacle` — Small Obstacle Detection for
+  mobile robots (uRAD Industrial).
+- :mod:`urad_mmwave.apps.cpd` — in-cabin occupancy / Child Presence
+  Detection with adult-child classification (uRAD Industrial).
 """

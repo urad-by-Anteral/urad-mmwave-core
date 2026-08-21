@@ -4,6 +4,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+## [0.3.0] - 2026-08-21
+
+Four new application clients for the uRAD Industrial, every one of them
+exercised against an IWR6843AoP over USB. Highlights of what the hardware
+runs settled:
+
+- Area Scanner: the TLV 1 spherical angles do arrive in radians, and the
+  track list is 40 bytes per track (no covariance, no `TRACKER_EC_OUTPUT`).
+  All four chirp configurations were run; note that
+  `low_power_full_bandwidth` ships `clutterRemoval` disabled, which lets
+  antenna coupling through as range-bin-0 detections.
+- Automated Doors: the angles are radians here too (the mmWave SDK 5 header
+  that calls them degrees is wrong); the door state machine was checked
+  frame by frame against the track data.
+- Small Obstacle Detection: the zone occupancy bitmask (TLV 1030) was
+  verified against a timed sequence and against a two-zone configuration
+  that splits the area by X. This firmware's TLV 1010 carries 112-byte
+  targets (the extended group-tracker format), not 40-byte ones.
+- CPD with Classification: the 48-byte header and, above all, the fact that
+  the TLV length field **includes its own 8-byte header** were confirmed
+  from `totalPacketLen` on every frame. The cabin transform and the zone
+  assignment were additionally checked to be numerically identical to TI's
+  MATLAB visualizer.
+
+Also fixed here: the level sensing range 3 decoding (its low word is
+unsigned; reading it as signed made range 3 read 62.5 mm short in half the
+frames), now confirmed on hardware.
+
+### Added
+- `urad-area-scanner`: client for the TI Area Scanner demo (uRAD
+  Industrial) — dynamic and static point clouds, track list, host-side
+  critical/warning safety zones with track projection, live top view
+  (`--gui`) and legacy text output.
+- `urad-automated-doors`: client for the TI Automated Doors and Gates demo
+  (uRAD Industrial) — replicates the firmware door trigger (approach zone,
+  time-to-door, hold frames) and static obstruction detection on the host,
+  with a live top view showing the door state.
+- `urad-small-obstacle`: client for the TI Small Obstacle Detection demo
+  (uRAD Industrial) — people-tracking TLV set plus the zone occupancy
+  bitmask TLV (1030), height-colored point cloud view with a Y-Z side
+  panel.
+- `urad-cpd`: client for the TI CPD with Classification demo (uRAD
+  Industrial) — parses the compressed point cloud, and ports the TI
+  visualizer's zone mapping, occupancy state machine and adult/child
+  classification to the host; zone-centric live view.
+
 ## [0.2.1] - 2026-08-19
 
 Every viewer in this release was validated against a uRAD Industrial

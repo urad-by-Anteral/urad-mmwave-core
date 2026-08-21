@@ -45,6 +45,10 @@ urad-mmwave = "urad_mmwave.cli:main"
 urad-level-sensing = "urad_mmwave.apps.level_sensing:main"
 urad-people-tracking = "urad_mmwave.apps.people_tracking:main"
 urad-vital-signs = "urad_mmwave.apps.vital_signs:main"
+urad-area-scanner = "urad_mmwave.apps.area_scanner:main"
+urad-automated-doors = "urad_mmwave.apps.automated_doors:main"
+urad-small-obstacle = "urad_mmwave.apps.small_obstacle:main"
+urad-cpd = "urad_mmwave.apps.cpd:main"
 
 [project.urls]
 Homepage = "https://urad.es"

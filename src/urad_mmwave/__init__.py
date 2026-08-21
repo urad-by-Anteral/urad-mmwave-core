@@ -36,7 +36,7 @@ from urad_mmwave.parser import (
 from urad_mmwave.radar import RadarSession, read_chirp_config
 from urad_mmwave.writer import PointCloudWriter, TemperatureWriter
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 
 __all__ = [
     "AppConfig",
