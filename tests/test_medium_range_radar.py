@@ -29,7 +29,9 @@ def _tlv(tlv_type: int, body: bytes) -> bytes:
 def _points_tlv(points, q_format: int = _Q, declared: int | None = None) -> bytes:
     """points: iterable of (speed_mps, peak_val, x_m, y_m, z_m)."""
     one = 1 << q_format
-    body = struct.pack("<2H", declared if declared is not None else len(points), q_format)
+    body = struct.pack(
+        "<2H", declared if declared is not None else len(points), q_format
+    )
     for speed, peak_val, x, y, z in points:
         body += struct.pack(
             "<hH3h",
@@ -116,9 +118,7 @@ def test_parse_parking_assist_and_projection():
     x, y = parking_assist_to_xy(frame.parking_assist)
     # Ordered left to right: sin az = -1, -0.5, 0, 0.5.
     assert x == pytest.approx([-20.0, -2.0, 0.0, 5.0])
-    assert y == pytest.approx(
-        [0.0, 4.0 * np.sqrt(0.75), 20.0, 10.0 * np.sqrt(0.75)]
-    )
+    assert y == pytest.approx([0.0, 4.0 * np.sqrt(0.75), 20.0, 10.0 * np.sqrt(0.75)])
 
     x_empty, y_empty = parking_assist_to_xy(np.zeros(0))
     assert len(x_empty) == 0 and len(y_empty) == 0

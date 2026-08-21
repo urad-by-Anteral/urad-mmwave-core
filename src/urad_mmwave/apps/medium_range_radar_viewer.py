@@ -151,9 +151,7 @@ def run_viewer(
     tracker_boxes = plot.plot(
         [],
         [],
-        pen=pg.mkPen(
-            color=_TRACKER_COLOR, width=1, style=getattr(pen_styles, "DashLine")
-        ),
+        pen=pg.mkPen(color=_TRACKER_COLOR, width=1, style=pen_styles.DashLine),
     )
     velocity_curve = plot.plot([], [], pen=pg.mkPen(color=_TRACKER_COLOR, width=2))
     parking_curve = plot.plot(
@@ -197,9 +195,7 @@ def run_viewer(
             else:
                 usrr_scatter.setData(x=[], y=[])
 
-            cluster_x, cluster_y = _rectangles_xy(
-                [tuple(c) for c in usrr.clusters]
-            )
+            cluster_x, cluster_y = _rectangles_xy([tuple(c) for c in usrr.clusters])
             cluster_curve.setData(cluster_x, cluster_y)
 
             park_x, park_y = parking_assist_to_xy(usrr.parking_assist)
@@ -207,11 +203,11 @@ def run_viewer(
 
         title = "uRAD medium range radar"
         if mrr is not None:
-            title += (
-                f" — MRR: {len(mrr.points)} points, {len(mrr.trackers)} tracked"
-            )
+            title += f" — MRR: {len(mrr.points)} points, {len(mrr.trackers)} tracked"
         if usrr is not None:
-            title += f" — USRR: {len(usrr.points)} points, {len(usrr.clusters)} clusters"
+            title += (
+                f" — USRR: {len(usrr.points)} points, " f"{len(usrr.clusters)} clusters"
+            )
         window.setWindowTitle(title)
 
     reader.start()
