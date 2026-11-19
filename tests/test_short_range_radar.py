@@ -10,12 +10,19 @@ from urad_mmwave.apps.short_range_radar import (
     NUM_SECTORS,
     DetectedZonesWriter,
     GridConfig,
+    SectorDistancesWriter,
     ZoneDetector,
+    ZoneEventsWriter,
+    ZoneMonitor,
     adapt_commands,
     flatten_zones,
+    format_distances,
     main,
     read_pointcloud_file,
     replay_frames,
+    sector_distances,
+    tx_mode_chirp_path,
+    zone_events,
     zone_indices,
     zone_label,
 )
@@ -222,7 +229,91 @@ def test_cli_replay_end_to_end(tmp_path, capsys):
     idx = (NUM_RINGS - 1 - 2) * NUM_SECTORS + 3
     assert [f[idx] for f in flags] == [0, 0, 0, 1, 1, 1]
     assert not (out_dir / "PointCloud.txt").exists()  # the input is not re-recorded
-    assert "nearest 2-3 m, +15..+45 deg" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "nearest 2-3 m, +15..+45 deg" in out
+    assert "zone ON  2-3 m, +15..+45 deg" in out
+
+    distances = (out_dir / "SectorDistances.txt").read_text(encoding="utf-8")
+    rows = [line.split() for line in distances.splitlines()]
+    assert len(rows) == 6
+    assert rows[0][:5] == ["-1"] * 5  # nothing confirmed yet
+    assert rows[3][3] == "2.500" and rows[3][2] == "-1"
+    events = (out_dir / "ZoneEvents.txt").read_text(encoding="utf-8").split()
+    assert events[1:] == ["ON", "2", "3"]
+
+
+# ---------------------------------------------------------------- distances / events
+def test_sector_distances_use_only_detected_zones():
+    grid = GridConfig(max_range=6)
+    detected = np.zeros((NUM_RINGS, NUM_SECTORS), dtype=bool)
+    detected[1, 2] = True  # 1-2 m, central sector
+    pts = _pts(_polar(1.8, 0), _polar(1.3, 5), _polar(0.6, 0), _polar(3.0, 30))
+    d = sector_distances(pts, detected, grid)
+    # 0.6 m is in ring 0 (not detected) and 3.0 m in sector 3 (not detected)
+    assert d[2] == pytest.approx(1.3)
+    assert np.isnan(d[[0, 1, 3, 4]]).all()
+
+
+def test_sector_distances_empty_frame():
+    d = sector_distances(np.empty((0, 6)), np.ones((10, 5), dtype=bool), GridConfig())
+    assert np.isnan(d).all()
+
+
+def test_zone_events_on_and_off():
+    prev = np.zeros((NUM_RINGS, NUM_SECTORS), dtype=bool)
+    cur = prev.copy()
+    prev[4, 0] = True
+    cur[1, 2] = True
+    events = {(e.ring, e.sector, e.active) for e in zone_events(prev, cur)}
+    assert events == {(4, 0, False), (1, 2, True)}
+
+
+def test_zone_monitor_reports_events_once():
+    monitor = ZoneMonitor(GridConfig(min_hits=2))
+    target = _pts(_polar(1.5, 0))
+    assert monitor.update(target).events == []
+    first = monitor.update(target)
+    assert [(e.ring, e.sector, e.active) for e in first.events] == [(1, 2, True)]
+    assert first.distances[2] == pytest.approx(1.5)
+    assert monitor.update(target).events == []  # still on: no new event
+    off = monitor.update(np.empty((0, 6)))
+    assert [(e.ring, e.sector, e.active) for e in off.events] == [(1, 2, False)]
+
+
+def test_writers_and_console_format(tmp_path):
+    d = np.array([np.nan, 2.3456, np.nan, 1.0, np.nan])
+    with SectorDistancesWriter(tmp_path / "d.txt") as w:
+        w.write(d, 7.0)
+    assert (tmp_path / "d.txt").read_text().split() == [
+        "-1",
+        "2.346",
+        "-1",
+        "1.000",
+        "-1",
+        "7.000",
+    ]
+    assert format_distances(d) == "-  2.35  -  1.00  -"
+    monitor = ZoneMonitor(GridConfig(min_hits=1))
+    events = monitor.update(_pts(_polar(1.5, 0))).events
+    with ZoneEventsWriter(tmp_path / "e.txt") as w:
+        w.write(events, 9.5)
+    assert (tmp_path / "e.txt").read_text() == "9.500 ON 1 2\n"
+
+
+# ---------------------------------------------------------------- TX modes
+def test_tx_mode_chirp_path(tmp_path):
+    for n in (1, 2, 3):
+        (tmp_path / f"short_range_radar_{n}tx.cfg").write_text("x")
+    default = tmp_path / "short_range_radar_2tx.cfg"
+    assert tx_mode_chirp_path(default, 3) == tmp_path / "short_range_radar_3tx.cfg"
+    (tmp_path / "short_range_radar_3tx.cfg").unlink()
+    with pytest.raises(FileNotFoundError):
+        tx_mode_chirp_path(default, 3)
+
+
+def test_tx_and_chirp_are_exclusive(capsys):
+    with pytest.raises(SystemExit):
+        main(["--config", "c.json", "--tx", "2", "--chirp", "x.cfg"])
 
 
 # ---------------------------------------------------------------- viewer helpers

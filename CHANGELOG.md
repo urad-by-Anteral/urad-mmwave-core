@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   Compared with the old scripts, the five sectors are now 30° each (the
   central one was 40° and the right edge fell into the leftmost sector)
   and points are no longer shifted 1 m towards the radar.
+  Every frame also gives the distance to the nearest detection of each
+  sector (`SectorDistances.txt`, shown in the viewer) and the zones that
+  switched on or off (`ZoneEvents.txt` and console). `--tx {1,2,3}` selects
+  the 1, 2 or 3 transmitter chirp configuration of the product (fewer TX,
+  higher maximum velocity; more TX, finer angles). The Python API is
+  `ZoneMonitor`.
 - `RadarSession` accepts an explicit list of configuration commands.
 
 ## [0.3.0] - 2026-08-21

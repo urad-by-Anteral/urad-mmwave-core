@@ -21,6 +21,13 @@ repository); the application rewrites its field-of-view lines
 (``aoaFovCfg`` and the range ``cfarFovCfg``) from ``--max-range`` and
 ``--fov`` so the firmware only reports points inside the monitored area.
 
+Besides the zone map, every frame gives the distance to the nearest
+detection of each sector (as a parking sensor would) and the zones that
+switched on or off (events). The chirp file can be chosen by number of
+transmitters with ``--tx``: each product ships ``short_range_radar_1tx``,
+``_2tx`` and ``_3tx`` configurations (fewer TX = higher maximum velocity,
+more TX = finer angles).
+
 Recorded ``PointCloud.txt`` files can be replayed without hardware
 (``--replay``), which is also how the zone logic is tested.
 
@@ -177,6 +184,102 @@ def flatten_zones(detected: np.ndarray) -> list[int]:
     return [int(v) for v in detected[::-1].ravel()]
 
 
+def sector_distances(
+    points: np.ndarray, detected: np.ndarray, grid: GridConfig
+) -> np.ndarray:
+    """Distance (m) to the nearest detection of every sector, like a parking
+    sensor: the closest point of the frame that lies in a *detected* zone of
+    that sector (so isolated points that did not pass the consecutive-hit
+    filter are ignored). NaN for sectors without a detected zone."""
+    out = np.full(NUM_SECTORS, np.nan)
+    rings, sectors, inside = zone_indices(points, grid)
+    if len(rings) == 0:
+        return out
+    rng, _ = to_polar(points)
+    valid = inside & detected[rings, sectors]
+    for sector in range(NUM_SECTORS):
+        mask = valid & (sectors == sector)
+        if mask.any():
+            out[sector] = float(rng[mask].min())
+    return out
+
+
+@dataclass(frozen=True)
+class ZoneEvent:
+    """A zone that changed state between two consecutive frames."""
+
+    ring: int
+    sector: int
+    active: bool
+
+    @property
+    def label(self) -> str:
+        return zone_label(self.ring, self.sector)
+
+
+def zone_events(previous: np.ndarray, current: np.ndarray) -> list[ZoneEvent]:
+    """Zones that switched on (``active=True``) or off between two maps."""
+    return [
+        ZoneEvent(int(r), int(s), bool(current[r, s]))
+        for r, s in np.argwhere(previous != current)
+    ]
+
+
+@dataclass
+class ZoneResult:
+    """Everything the application derives from one frame.
+
+    Attributes:
+        detected: ``(NUM_RINGS, NUM_SECTORS)`` boolean map of detected zones.
+        distances: Nearest detection per sector in meters (NaN = none).
+        events: Zones that switched on or off in this frame.
+    """
+
+    detected: np.ndarray
+    distances: np.ndarray
+    events: list[ZoneEvent]
+
+
+class ZoneMonitor:
+    """Zone detection plus per-sector distances and on/off events.
+
+    Example:
+        monitor = ZoneMonitor(GridConfig(max_range=6))
+        result = monitor.update(frame.points)
+        for event in result.events:
+            print("ON " if event.active else "OFF", event.label)
+    """
+
+    def __init__(self, grid: GridConfig):
+        self.grid = grid
+        self.detector = ZoneDetector(grid)
+        self._previous = np.zeros((NUM_RINGS, NUM_SECTORS), dtype=bool)
+
+    def update(self, points: np.ndarray) -> ZoneResult:
+        detected = self.detector.update(points)
+        result = ZoneResult(
+            detected=detected,
+            distances=sector_distances(points, detected, self.grid),
+            events=zone_events(self._previous, detected),
+        )
+        self._previous = detected.copy()
+        return result
+
+
+def tx_mode_chirp_path(chirp_path: str | Path, n_tx: int) -> Path:
+    """Chirp configuration of a TX mode: ``short_range_radar_<n>tx.cfg`` in the
+    folder of the configured chirp file (each product repository ships the
+    1, 2 and 3 TX variants side by side).
+
+    Raises:
+        FileNotFoundError: If the product has no configuration for that mode.
+    """
+    path = Path(chirp_path).parent / f"short_range_radar_{n_tx}tx.cfg"
+    if not path.exists():
+        raise FileNotFoundError(f"No {n_tx} TX chirp configuration: {path}")
+    return path
+
+
 # --------------------------------------------------------------------------
 # Chirp configuration
 # --------------------------------------------------------------------------
@@ -277,6 +380,30 @@ class DetectedZonesWriter(_LineWriter):
         self._file.write(f"{flags} {timestamp:.3f}\n")
 
 
+class SectorDistancesWriter(_LineWriter):
+    """Appends the nearest detection of each of the five sectors (m, ``-1``
+    when the sector has none) and the timestamp, one line per frame."""
+
+    def write(self, distances: np.ndarray, timestamp: float) -> None:
+        values = " ".join("-1" if np.isnan(d) else f"{d:.3f}" for d in distances)
+        self._file.write(f"{values} {timestamp:.3f}\n")
+
+
+class ZoneEventsWriter(_LineWriter):
+    """Appends one line per zone that switches on or off:
+    ``timestamp ON|OFF ring sector``."""
+
+    def write(self, events: list[ZoneEvent], timestamp: float) -> None:
+        for e in events:
+            state = "ON" if e.active else "OFF"
+            self._file.write(f"{timestamp:.3f} {state} {e.ring} {e.sector}\n")
+
+
+def format_distances(distances: np.ndarray) -> str:
+    """Console form of the per-sector distances, e.g. ``'-  2.31  1.42  -  -'``."""
+    return "  ".join("-" if np.isnan(d) else f"{d:.2f}" for d in distances)
+
+
 @dataclass
 class _Stats:
     frames: int = 0
@@ -308,7 +435,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Use one shared serial port for control and data "
         "(e.g. /dev/serial0 on Raspberry Pi)",
     )
-    parser.add_argument("--chirp", help="Override the chirp configuration file path")
+    chirp = parser.add_mutually_exclusive_group()
+    chirp.add_argument("--chirp", help="Override the chirp configuration file path")
+    chirp.add_argument(
+        "--tx",
+        type=int,
+        choices=(1, 2, 3),
+        help="Number of transmitters: selects short_range_radar_<N>tx.cfg next to "
+        "the configured chirp file (fewer TX = higher maximum velocity, more TX = "
+        "finer angles; see the product README)",
+    )
     parser.add_argument(
         "--max-range",
         type=float,
@@ -343,8 +479,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output-dir",
         default="./output",
-        help="Directory for PointCloud.txt and DetectedZones.txt "
-        "(default: ./output)",
+        help="Directory for PointCloud.txt, DetectedZones.txt, "
+        "SectorDistances.txt and ZoneEvents.txt (default: ./output)",
     )
     parser.add_argument(
         "--no-save", action="store_true", help="Disable all file output"
@@ -402,7 +538,7 @@ def main(argv: list[str] | None = None) -> int:
         log.error("%s", exc)
         return 1
 
-    detector = ZoneDetector(grid)
+    monitor = ZoneMonitor(grid)
     stats = _Stats()
     output_dir = Path(args.output_dir)
 
@@ -426,8 +562,13 @@ def main(argv: list[str] | None = None) -> int:
                     config.data_serial.port = args.single_port
                 if args.chirp:
                     config.chirp_config_path = args.chirp
+                if args.tx is not None:
+                    config.chirp_config_path = str(
+                        tx_mode_chirp_path(config.chirp_config_path, args.tx)
+                    )
                 if args.gpio_reset_pin is not None:
                     config.gpio_reset_pin = args.gpio_reset_pin
+                log.info("Chirp configuration: %s", config.chirp_config_path)
                 commands = adapt_commands(
                     read_chirp_config(config.chirp_config_path), grid
                 )
@@ -435,6 +576,7 @@ def main(argv: list[str] | None = None) -> int:
                 frames = session.frames()
 
             pointcloud_writer = zones_writer = None
+            distances_writer = events_writer = None
             if not args.no_save:
                 # in replay mode the input file is not re-recorded
                 if not args.replay:
@@ -444,17 +586,29 @@ def main(argv: list[str] | None = None) -> int:
                 zones_writer = stack.enter_context(
                     DetectedZonesWriter(output_dir / "DetectedZones.txt")
                 )
+                distances_writer = stack.enter_context(
+                    SectorDistancesWriter(output_dir / "SectorDistances.txt")
+                )
+                events_writer = stack.enter_context(
+                    ZoneEventsWriter(output_dir / "ZoneEvents.txt")
+                )
 
-            def process(frame: Frame) -> np.ndarray:
-                detected = detector.update(frame.points)
+            def process(frame: Frame) -> ZoneResult:
+                result = monitor.update(frame.points)
                 stats.frames += 1
-                active = np.argwhere(detected)
+                active = np.argwhere(result.detected)
                 line = f"frame {frame.header.frame_number}: {len(frame.points)} points"
                 if len(active):
                     stats.alarms += 1
                     nearest = zone_label(*active[np.argmin(active[:, 0])])
-                    line += f", {len(active)} zone(s) detected, nearest {nearest}"
+                    line += (
+                        f", {len(active)} zone(s) detected, nearest {nearest}"
+                        f" | sectors [m]: {format_distances(result.distances)}"
+                    )
                 print(line)
+                for event in result.events:
+                    state = "ON " if event.active else "OFF"
+                    print(f"  zone {state} {event.label}")
                 if args.print_points:
                     for p in frame.points:
                         print(
@@ -464,8 +618,10 @@ def main(argv: list[str] | None = None) -> int:
                 if pointcloud_writer is not None:
                     pointcloud_writer.write(frame.points, frame.timestamp)
                 if zones_writer is not None:
-                    zones_writer.write(detected, frame.timestamp)
-                return detected
+                    zones_writer.write(result.detected, frame.timestamp)
+                    distances_writer.write(result.distances, frame.timestamp)
+                    events_writer.write(result.events, frame.timestamp)
+                return result
 
             if args.gui:
                 if args.duration is not None or args.max_frames is not None:

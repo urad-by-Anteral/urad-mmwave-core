@@ -24,6 +24,7 @@ from urad_mmwave.apps.short_range_radar import (
     GRID_HALF_SPAN_DEG,
     SECTOR_WIDTH_DEG,
     GridConfig,
+    ZoneResult,
 )
 from urad_mmwave.parser import Frame
 from urad_mmwave.viewer import _import_pyqtgraph, point_sizes
@@ -68,7 +69,7 @@ def zone_outline(
 def run_viewer(
     frames: Iterator[Frame],
     grid: GridConfig,
-    process: Callable[[Frame], np.ndarray],
+    process: Callable[[Frame], ZoneResult],
 ) -> None:
     """Open the viewer window and stream frames until it is closed.
 
@@ -76,8 +77,8 @@ def run_viewer(
         frames: Iterator of decoded out-of-box frames (radar or replay).
         grid: Monitored area and alarm filter.
         process: Called for every frame from the reader thread; returns the
-            ``(NUM_RINGS, NUM_SECTORS)`` detected-zone map (the CLI uses it
-            for printing and file output too).
+            frame's :class:`ZoneResult` (detected zones and per-sector
+            distances; the CLI uses it for printing and file output too).
     """
     pg, QtCore = _import_pyqtgraph()
     from pyqtgraph.Qt import QtGui, QtWidgets
@@ -144,13 +145,28 @@ def run_viewer(
     scatter = pg.ScatterPlotItem(pen=None, brush=pg.mkBrush(20, 20, 20, 220))
     plot.addItem(scatter)
 
+    # Nearest detection per sector, written just inside the outer arc
+    labels = {}
+    for sector in grid.sectors:
+        low, high = sector_angles(sector)
+        a = np.radians((low + high) / 2)
+        r = max(rmax - 0.45, 0.5)
+        text = pg.TextItem("", color=(20, 20, 20), anchor=(0.5, 0.5))
+        text.setPos(r * np.sin(a), r * np.cos(a))
+        plot.addItem(text)
+        labels[sector] = text
+
     def _refresh() -> None:
         try:
-            frame, detected = latest.pop()
+            frame, result = latest.pop()
         except IndexError:
             return
+        detected = result.detected
         for (ring, sector), item in zones.items():
             item.setVisible(bool(detected[ring, sector]))
+        for sector, text in labels.items():
+            d = result.distances[sector]
+            text.setText("" if np.isnan(d) else f"{d:.2f} m")
         if len(frame.points):
             scatter.setData(
                 x=frame.points[:, 0],
