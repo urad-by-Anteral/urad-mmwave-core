@@ -1,9 +1,11 @@
-"""Short Range Radar application (uRAD Automotive HPA).
+"""Short Range Radar application (uRAD Automotive and uRAD Automotive HPA).
 
 Zone-based object detection on top of the standard **out-of-box** firmware
-(``out_of_box_1843_isk.bin``): the radar streams its CFAR point cloud and the
-host accumulates the points on a polar grid of 1 m range rings (up to 10)
-by five 30° azimuth sectors covering ±75° around boresight. A zone is
+of each product (``out_of_box_1843_aop.bin`` for the uRAD Automotive,
+``out_of_box_1843_isk.bin`` for the HPA): the radar streams its CFAR point
+cloud and the host accumulates the points on a polar grid of 1 m range
+rings (up to 10) by five 30° azimuth sectors covering ±75° around
+boresight. A zone is
 declared **detected** after it has been hit in ``min_hits`` consecutive
 frames; one frame without points in it resets the count. This filters out
 isolated false detections while reacting in a few frames (4 frames ≈ 0.13 s
@@ -13,10 +15,11 @@ Azimuth is measured from boresight (+Y), positive towards +X (the right of
 an observer standing behind the radar), so sector 0 spans −75…−45° and
 sector 4 spans +45…+75°.
 
-The chirp configuration is a regular out-of-box ``.cfg`` file; the
-application rewrites its field-of-view lines (``aoaFovCfg`` and the range
-``cfarFovCfg``) from ``--max-range`` and ``--fov`` so the firmware only
-reports points inside the monitored area.
+The chirp configuration is a regular out-of-box ``.cfg`` file, one per
+product (in the ``applications/short_range_radar`` folder of each product
+repository); the application rewrites its field-of-view lines
+(``aoaFovCfg`` and the range ``cfarFovCfg``) from ``--max-range`` and
+``--fov`` so the firmware only reports points inside the monitored area.
 
 Recorded ``PointCloud.txt`` files can be replayed without hardware
 (``--replay``), which is also how the zone logic is tested.
@@ -285,7 +288,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="urad-short-range-radar",
         description="Zone-based short range object detection with a uRAD "
-        "Automotive HPA radar running the out-of-box firmware.",
+        "Automotive or uRAD Automotive HPA radar running the out-of-box "
+        "firmware.",
     )
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument(

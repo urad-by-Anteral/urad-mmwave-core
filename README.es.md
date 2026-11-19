@@ -32,7 +32,8 @@ out-of-box demo (mmWave SDK 3.x):
   obstáculos pequeños para robots móviles), `urad-cpd` (ocupación de
   cabina / detección de presencia infantil con clasificación adulto-niño) y
   `urad-short-range-radar` (detección de objetos por zonas a corta
-  distancia para el uRAD Automotive HPA, sobre el firmware out-of-box).
+  distancia para el uRAD Automotive y el uRAD Automotive HPA, sobre el
+  firmware out-of-box).
   Cada uno requiere su firmware, distribuido en los repositorios de
   producto.
 

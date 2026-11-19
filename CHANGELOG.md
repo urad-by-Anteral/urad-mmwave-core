@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - `urad-short-range-radar`: zone-based short range object detection for the
-  uRAD Automotive HPA on the out-of-box firmware, replacing the standalone
-  scripts and PyQt5 GUI of the product repository. Detections are
+  uRAD Automotive and the uRAD Automotive HPA on each product's out-of-box
+  firmware, replacing the standalone scripts and PyQt5 GUI of the HPA
+  repository (the uRAD Automotive did not have this application). Detections are
   accumulated on a grid of 1 m rings by five 30° sectors and a zone raises
   its alarm after `--min-hits` consecutive frames. `--max-range` and
   `--fov` rewrite the field-of-view lines of the chirp configuration,

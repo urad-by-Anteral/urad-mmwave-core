@@ -19,5 +19,6 @@ the product repositories) and builds on the generic packet framing of
 - :mod:`urad_mmwave.apps.cpd` — in-cabin occupancy / Child Presence
   Detection with adult-child classification (uRAD Industrial).
 - :mod:`urad_mmwave.apps.short_range_radar` — Short Range Radar zone
-  detection on the out-of-box firmware (uRAD Automotive HPA).
+  detection on the out-of-box firmware (uRAD Automotive and uRAD
+  Automotive HPA).
 """
