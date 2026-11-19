@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-19
+
+### Added
+
+- `urad-parking`: client for the TI Radar Toolbox Automated Parking lab on
+  the uRAD Automotive and the uRAD Automotive HPA. The mmWave SDK demo
+  firmware runs an advanced frame with two subframes — long range 2D
+  (0-50 m) and short range 3D with elevation (0-10 m) — and the client
+  separates them, writes `LongRange.txt` and `ShortRange.txt`, reports the
+  nearest short range obstacle and, with `--gui`, shows both zones (the
+  short range one colored by height) and the range profiles of both
+  subframes.
+
 ## [0.5.0] - 2026-11-19
 
 ### Added
