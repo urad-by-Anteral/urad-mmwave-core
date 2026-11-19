@@ -30,7 +30,9 @@ firmware (mmWave SDK 3.x):
   short range object detection for the uRAD Automotive and the uRAD
   Automotive HPA, on the out-of-box firmware) and `urad-mrr` (TI Medium
   Range Radar for the uRAD Automotive HPA: long range tracking up to 120 m
-  plus an ultra short range point cloud). Each requires its firmware, distributed in the
+  plus an ultra short range point cloud) and `urad-parking` (TI Automated
+  Parking for the uRAD Automotive and HPA: long range 2D up to 50 m plus
+  short range 3D up to 10 m). Each requires its firmware, distributed in the
   product repositories.
 
 Supported products: **uRAD Automotive** (AWR1843AoP, 77 GHz), **uRAD

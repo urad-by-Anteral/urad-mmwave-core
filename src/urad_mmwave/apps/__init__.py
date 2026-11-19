@@ -24,4 +24,7 @@ the product repositories) and builds on the generic packet framing of
 - :mod:`urad_mmwave.apps.medium_range_radar` — TI Medium Range Radar
   (long range tracking + ultra short range point cloud, uRAD Automotive
   HPA).
+- :mod:`urad_mmwave.apps.automated_parking` — TI Automated Parking: long
+  range 2D and short range 3D point clouds (uRAD Automotive and uRAD
+  Automotive HPA).
 """

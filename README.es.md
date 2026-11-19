@@ -35,7 +35,9 @@ out-of-box demo (mmWave SDK 3.x):
   distancia para el uRAD Automotive y el uRAD Automotive HPA, sobre el
   firmware out-of-box) y `urad-mrr` (Medium Range Radar de TI para el uRAD
   Automotive HPA: seguimiento a largo alcance hasta 120 m más una nube de
-  puntos de muy corto alcance).
+  puntos de muy corto alcance) y `urad-parking` (Automated Parking de TI
+  para el uRAD Automotive y el HPA: 2D de largo alcance hasta 50 m más 3D de
+  corto alcance hasta 10 m).
   Cada uno requiere su firmware, distribuido en los repositorios de
   producto.
 
