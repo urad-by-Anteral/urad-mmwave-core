@@ -15,8 +15,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        python-version: ["3.9", "3.13"]
+        include:
+          # ubuntu-latest (26.04) no longer ships Python 3.9: keep the oldest
+          # supported Python on the previous LTS image
+          - { os: ubuntu-24.04, python-version: "3.9" }
+          - { os: ubuntu-latest, python-version: "3.13" }
+          - { os: windows-latest, python-version: "3.9" }
+          - { os: windows-latest, python-version: "3.13" }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
