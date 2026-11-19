@@ -25,9 +25,11 @@ firmware (mmWave SDK 3.x):
   (area scanner with static object detection and safety zones),
   `urad-automated-doors` (automated doors and gates trigger),
   `urad-small-obstacle` (small obstacle detection for mobile robots),
-  and `urad-cpd` (in-cabin occupancy / child presence detection with
-  adult-child classification). Each requires its dedicated firmware,
-  distributed in the product repositories.
+  `urad-cpd` (in-cabin occupancy / child presence detection with
+  adult-child classification) and `urad-short-range-radar` (zone-based
+  short range object detection for the uRAD Automotive and the uRAD
+  Automotive HPA, on the out-of-box firmware). Each requires its firmware, distributed in the
+  product repositories.
 
 Supported products: **uRAD Automotive** (AWR1843AoP, 77 GHz), **uRAD
 Automotive HPA** (AWR1843 ISK, 77 GHz) and **uRAD Industrial** (IWR6843AoP,

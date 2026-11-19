@@ -112,8 +112,16 @@ class RadarSession:
                 ...
     """
 
-    def __init__(self, config: AppConfig):
+    def __init__(self, config: AppConfig, commands: list[str] | None = None):
+        """
+        Args:
+            config: Application configuration.
+            commands: Configuration commands to send instead of reading
+                ``config.chirp_config_path`` (for applications that adapt
+                the chirp configuration to their own parameters).
+        """
         self._config = config
+        self._commands = commands
         self._data_port: serial.Serial | None = None
         self._stopped = False
 
@@ -123,7 +131,11 @@ class RadarSession:
             log.info("Resetting radar via GPIO pin %d", config.gpio_reset_pin)
             gpio_reset(config.gpio_reset_pin)
 
-        commands = read_chirp_config(config.chirp_config_path)
+        commands = (
+            self._commands
+            if self._commands is not None
+            else read_chirp_config(config.chirp_config_path)
+        )
         log.info(
             "Configuring radar on %s at %d baud (%d commands)",
             config.control_serial.port,

@@ -29,10 +29,13 @@ out-of-box demo (mmWave SDK 3.x):
   tracking), `urad-area-scanner` (escáner de área con detección de objetos
   estáticos y zonas de seguridad), `urad-automated-doors` (disparo de
   puertas y portones automáticos), `urad-small-obstacle` (detección de
-  obstáculos pequeños para robots móviles) y `urad-cpd` (ocupación de
-  cabina / detección de presencia infantil con clasificación adulto-niño).
-  Cada uno requiere su firmware dedicado, distribuido en los repositorios
-  de producto.
+  obstáculos pequeños para robots móviles), `urad-cpd` (ocupación de
+  cabina / detección de presencia infantil con clasificación adulto-niño) y
+  `urad-short-range-radar` (detección de objetos por zonas a corta
+  distancia para el uRAD Automotive y el uRAD Automotive HPA, sobre el
+  firmware out-of-box).
+  Cada uno requiere su firmware, distribuido en los repositorios de
+  producto.
 
 Productos soportados: **uRAD Automotive** (AWR1843AoP, 77 GHz), **uRAD
 Automotive HPA** (AWR1843 ISK, 77 GHz) y **uRAD Industrial** (IWR6843AoP,

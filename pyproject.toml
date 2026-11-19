@@ -49,6 +49,7 @@ urad-area-scanner = "urad_mmwave.apps.area_scanner:main"
 urad-automated-doors = "urad_mmwave.apps.automated_doors:main"
 urad-small-obstacle = "urad_mmwave.apps.small_obstacle:main"
 urad-cpd = "urad_mmwave.apps.cpd:main"
+urad-short-range-radar = "urad_mmwave.apps.short_range_radar:main"
 
 [project.urls]
 Homepage = "https://urad.es"
