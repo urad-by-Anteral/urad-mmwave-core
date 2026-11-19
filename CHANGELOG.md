@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `urad-mrr`: client for the TI Radar Toolbox Medium Range Radar firmware on
+  the uRAD Automotive HPA. The firmware alternates an MRR subframe (long
+  range, all three TX beamforming, EKF tracking up to ~120 m) and a USRR
+  subframe (3-TX MIMO point cloud, DBSCAN clusters and parking assist up to
+  ~30 m) with a compiled-in RF configuration; the client starts it with
+  `advFrameCfg` + `sensorStart` on the control port, decodes the four TLVs
+  and writes `PointCloud`, `Clusters`, `Trackers` and `ParkingAssist` files.
+  `--gui` shows both subframes, clusters, tracks and the parking assist
+  border. The sensor is left running on exit (the firmware's `sensorStop`
+  prevents a later restart without a reset); `--stop-on-exit` stops it.
+
 ## [0.4.0] - 2026-11-19
 
 ### Added
