@@ -33,7 +33,9 @@ out-of-box demo (mmWave SDK 3.x):
   cabina / detección de presencia infantil con clasificación adulto-niño) y
   `urad-short-range-radar` (detección de objetos por zonas a corta
   distancia para el uRAD Automotive y el uRAD Automotive HPA, sobre el
-  firmware out-of-box).
+  firmware out-of-box) y `urad-mrr` (Medium Range Radar de TI para el uRAD
+  Automotive HPA: seguimiento a largo alcance hasta 120 m más una nube de
+  puntos de muy corto alcance).
   Cada uno requiere su firmware, distribuido en los repositorios de
   producto.
 

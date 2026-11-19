@@ -21,4 +21,7 @@ the product repositories) and builds on the generic packet framing of
 - :mod:`urad_mmwave.apps.short_range_radar` — Short Range Radar zone
   detection on the out-of-box firmware (uRAD Automotive and uRAD
   Automotive HPA).
+- :mod:`urad_mmwave.apps.medium_range_radar` — TI Medium Range Radar
+  (long range tracking + ultra short range point cloud, uRAD Automotive
+  HPA).
 """

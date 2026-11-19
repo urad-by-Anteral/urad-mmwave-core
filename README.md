@@ -28,7 +28,9 @@ firmware (mmWave SDK 3.x):
   `urad-cpd` (in-cabin occupancy / child presence detection with
   adult-child classification) and `urad-short-range-radar` (zone-based
   short range object detection for the uRAD Automotive and the uRAD
-  Automotive HPA, on the out-of-box firmware). Each requires its firmware, distributed in the
+  Automotive HPA, on the out-of-box firmware) and `urad-mrr` (TI Medium
+  Range Radar for the uRAD Automotive HPA: long range tracking up to 120 m
+  plus an ultra short range point cloud). Each requires its firmware, distributed in the
   product repositories.
 
 Supported products: **uRAD Automotive** (AWR1843AoP, 77 GHz), **uRAD
